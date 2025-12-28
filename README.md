@@ -17,7 +17,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-6.2-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Screenshots](#-screenshots)
+[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Docker](#-deployment) • [API Docs](#-api-documentation)
 
 </div>
 
@@ -126,10 +126,11 @@
 <summary><b>📱 Communication</b></summary>
 
 - **SMTP Email** - Transactional emails with templates
+- **Discord Bot** - DM notifications with granular user preferences
 - **Bulk Email** - Newsletter campaigns
 - **Push Notifications** - Real-time web notifications
 - **Live Chat** - Customer support widget
-- **Discord Webhook** - Order notifications to Discord
+- **Discord Webhook** - Order notifications to Discord channels
 - **Ticket System** - Support ticket management
 - **Chat System** - Group chats, direct messages, typing indicators
 - **Sticker Store** - Custom sticker packs for chat
@@ -169,6 +170,24 @@
 
 </details>
 
+<details>
+<summary><b>⚡ Performance & Security</b></summary>
+
+- **API Rate Limiting** - 8 configured rate limiters for different endpoints:
+  - Auth: 5 requests/15min (strict)
+  - Payments: 20 requests/hour
+  - File uploads: 50 uploads/hour
+  - Email: 10 emails/hour
+  - Standard API: 100 requests/15min
+  - Admin bypass for rate limits
+- **WebSocket Real-time** - Socket.IO for live chat, notifications
+- **Docker Ready** - Full containerization with docker-compose
+- **Testing Suite** - Vitest with test examples
+- **Security Headers** - Helmet.js protection
+- **CORS Protection** - Configurable origin whitelist
+
+</details>
+
 ---
 
 ## 🛠 Tech Stack
@@ -197,24 +216,23 @@
 | **Express.js** | 4.21 | Web framework |
 | **Prisma** | 6.2 | Next-gen ORM |
 | **MySQL** | 8.0 | Relational database |
+| **Socket.IO** | 4.8 | WebSocket real-time communication |
+| **Discord.js** | 14.16 | Discord bot integration |
 | **JWT** | 9.x | Authentication tokens |
+| **Express Rate Limit** | 7.5 | API rate limiting & throttling |
 | **Nodemailer** | 6.x | SMTP email service |
 | **Bcrypt** | 5.x | Password hashing |
-
-### Third-party Integrations
-
-| Service | Purpose |
-|---------|---------|
-| **PayOS** | Vietnam payment gateway (VND) |
-| **PayPal** | International payments (USD) |
-| **Google OAuth** | Social login |
+| **Vitest** | 2.1 | Testing framework |
 | **Discord OAuth** | Social login & webhooks |
 | **Naperis API** | Game top-up provider |
 | **Cloudinary / R2** | Media storage (configurable) |
 
 ### DevOps & Tools
 
+- **Docker** - Containerization (Frontend + Backend + MySQL)
+- **Docker Compose** - Multi-container orchestration
 - **Git** - Version control
+- **Vitest** - Testing framework
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **Prisma Studio** - Database GUI
@@ -224,7 +242,27 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Docker (Recommended)
+
+**Fastest way to get started!** ✨
+
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/prime-shop.git
+cd prime-shop
+cp .env.docker .env
+
+# Start everything
+docker-compose up -d
+
+# Access at http://localhost:3000
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
+
+### Option 2: Local Development
+
+#### Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -1127,16 +1165,30 @@ Built with amazing open-source technologies:
 
 ## 🗺️ Roadmap
 
+### ✅ Completed Features
+
+- [x] **WebSocket real-time features** - Socket.IO integrated for live chat, notifications, typing indicators
+- [x] **Advanced analytics dashboard** - Seller stats, revenue charts, user analytics with comprehensive insights
+- [x] **Multi-currency support** - VND/USD switching with configurable exchange rates
+- [x] **Subscription system** - Prime Boost plans, VIP tier progression (Bronze → Legend), affiliate tiers
+- [x] **API rate limiting** - Express rate limiter with 8 configured limiters (auth, payment, upload, email, etc.)
+- [x] **Docker containerization** - Full Docker setup with docker-compose, multi-stage builds, health checks
+- [x] **Testing infrastructure** - Vitest configured with test setup and example tests
+- [x] **Discord bot integration** - User notification system with DM delivery and granular preferences
+
+### 🚧 In Progress
+
+- [~] **Two-factor authentication** - Database schema ready, partial email template support (needs TOTP implementation)
+- [~] **Comprehensive testing** - Test infrastructure ready, needs full test coverage
+
+### 📋 Planned Features
+
 - [ ] Mobile app (React Native)
-- [ ] WebSocket real-time features
-- [ ] Advanced analytics dashboard
-- [ ] Multi-currency support
-- [ ] Subscription system
-- [ ] API rate limiting
-- [ ] Two-factor authentication
-- [ ] Automated testing suite
-- [ ] Performance optimizations
-- [ ] Docker containerization
+- [ ] Performance optimizations (image lazy loading, code splitting, caching strategies)
+- [ ] Redis integration for distributed rate limiting
+- [ ] Full test coverage (unit + integration + e2e)
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Kubernetes deployment configs
 
 ---
 

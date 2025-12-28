@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
@@ -26,10 +25,20 @@ import rpcRoutes from './routes/rpc.js';
 import emailRoutes from './routes/email.js';
 import naperisRoutes from './routes/naperis.js';
 import setupRoutes from './routes/setup.js';
+import discordRoutes from './routes/discord.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { authMiddleware } from './middleware/auth.js';
+import {
+  apiLimiter,
+  authLimiter,
+  paymentLimiter,
+  uploadLimiter,
+  emailLimiter,
+  createAccountLimiter,
+  passwordResetLimiter,
+} from './middleware/rateLimiter.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -52,14 +61,6 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
-  message: { error: 'Too many requests, please try again later.' },
-});
-app.use('/api/', limiter);
-
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -68,27 +69,37 @@ app.use(cookieParser());
 // Static files (for local uploads)
 app.use('/uploads', express.static('uploads'));
 
-// Health check
+// Health check (no rate limit)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes
-app.use('/api/setup', setupRoutes); // Setup routes - no auth required
-app.use('/api/auth', authRoutes);
-app.use('/api/oauth', oauthRoutes);
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/upload', authMiddleware, uploadRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/webhooks', webhookRoutes);
-app.use('/api/db', dbRoutes);
-app.use('/api/rpc', rpcRoutes);
-app.use('/api/email', emailRoutes);
-app.use('/api/naperis', naperisRoutes);
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+  });
+});
+
+// API Routes with specific rate limiters
+app.use('/api/setup', apiLimiter, setupRoutes); // Setup routes - no auth required
+app.use('/api/auth', authLimiter, authRoutes); // Strict rate limit for auth
+app.use('/api/oauth', authLimiter, oauthRoutes); // Strict rate limit for OAuth
+app.use('/api/users', apiLimiter, authMiddleware, userRoutes);
+app.use('/api/products', apiLimiter, productRoutes);
+app.use('/api/categories', apiLimiter, categoryRoutes);
+app.use('/api/orders', apiLimiter, orderRoutes);
+app.use('/api/payments', paymentLimiter, paymentRoutes); // Strict for payments
+app.use('/api/upload', uploadLimiter, authMiddleware, uploadRoutes); // Limit uploads
+app.use('/api/admin', apiLimiter, adminRoutes);
+app.use('/api/webhooks', webhookRoutes); // No rate limit for webhooks
+app.use('/api/db', apiLimiter, dbRoutes);
+app.use('/api/rpc', apiLimiter, rpcRoutes);
+app.use('/api/email', emailLimiter, emailRoutes); // Limit email sending
+app.use('/api/naperis', apiLimiter, naperisRoutes);
+app.use('/api/discord', apiLimiter, discordRoutes); // Discord integration
 
 // Error handling
 app.use(errorHandler);

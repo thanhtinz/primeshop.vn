@@ -48,6 +48,7 @@ const SettingsVouchersPage = lazy(() => import("./pages/settings/SettingsVoucher
 const SettingsItemsPage = lazy(() => import("./pages/settings/SettingsItemsPage"));
 const SettingsSecurityPage = lazy(() => import("./pages/settings/SettingsSecurityPage"));
 const SettingsEmailPage = lazy(() => import("./pages/settings/SettingsEmailPage"));
+const SettingsNotificationsPage = lazy(() => import("./pages/settings/SettingsNotificationsPage"));
 const SettingsRewardsPage = lazy(() => import("./pages/settings/SettingsRewardsPage"));
 const SettingsAchievementsPage = lazy(() => import("./pages/settings/SettingsAchievementsPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
@@ -200,6 +201,8 @@ const AdminDesignAudit = lazy(() => import("./pages/admin/AdminDesignAudit"));
 const AdminDesignAbuse = lazy(() => import("./pages/admin/AdminDesignAbuse"));
 const AdminPartners = lazy(() => import("./pages/admin/AdminPartners"));
 const AdminSecrets = lazy(() => import("./pages/admin/settings/AdminSecrets"));
+const AdminDiscordBot = lazy(() => import("./pages/admin/settings/AdminDiscordBot"));
+const AdminNotificationTemplates = lazy(() => import("./pages/admin/AdminNotificationTemplates"));
 const SellerDesignServicesPage = lazy(() => import("./pages/marketplace/seller/SellerDesignServicesPage"));
 const AdminStaticPages = lazy(() => import("./pages/admin/AdminStaticPages"));
 const SellerDesignOrdersPage = lazy(() => import("./pages/marketplace/seller/SellerDesignOrdersPage"));
@@ -297,6 +300,7 @@ const AppRoutes = () => {
           <Route path="items" element={<SettingsItemsPage />} />
           <Route path="security" element={<SettingsSecurityPage />} />
           <Route path="email" element={<SettingsEmailPage />} />
+          <Route path="notifications" element={<SettingsNotificationsPage />} />
           <Route path="rewards" element={<SettingsRewardsPage />} />
           <Route path="achievements" element={<SettingsAchievementsPage />} />
         </Route>
@@ -484,6 +488,8 @@ const AppRoutes = () => {
           <Route path="design-abuse" element={<AdminDesignAbuse />} />
           <Route path="partners" element={<AdminPartners />} />
           <Route path="secrets" element={<AdminSecrets />} />
+          <Route path="discord-bot" element={<AdminDiscordBot />} />
+          <Route path="notification-templates" element={<AdminNotificationTemplates />} />
           
           <Route path="settings" element={<AdminSettings />} />
           <Route path="static-pages" element={<AdminStaticPages />} />

@@ -514,4 +514,12 @@ router.get('/stats', asyncHandler(async (req, res) => {
   });
 }));
 
+// ============ DISCORD BOT ADMIN ============
+import discordAdminRoutes from './admin/discord.js';
+router.use('/discord', discordAdminRoutes);
+
+// ============ DISCORD TEMPLATES ADMIN ============
+import discordTemplatesRoutes from './admin/discordTemplates.js';
+router.use('/', discordTemplatesRoutes);
+
 export default router;
