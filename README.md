@@ -45,7 +45,7 @@
 
 - 🎮 **Game Accounts Trading** - Buy/sell accounts with secure login info or codestring delivery
 - 💎 **Automated Top-up Services** - Integrated with game recharge APIs (Naperis, etc.)
-- 🎨 **Design Marketplace** - Connect freelance designers with clients
+- 🎨 **Design Marketplace** - Connect freelance designers with clients (uses same infrastructure as game accounts)
 - 📱 **SMM Panel** - Social media marketing services integration
 - 🏪 **Multi-vendor Marketplace** - Allow users to create and manage their own shops
 
@@ -139,14 +139,20 @@
 <details>
 <summary><b>🎨 Design Services</b></summary>
 
+> Uses the same core marketplace infrastructure as game accounts with specialized features for designer workflows
+
 - **Service Listings** - Portfolio showcase for designers
 - **Order Management** - Milestone tracking, revision limits
-- **File Delivery** - Secure file upload/download
-- **NDA Support** - Non-disclosure agreements
+- **File Delivery** - Secure file upload/download (similar to account delivery)
+- **NDA Support** - Non-disclosure agreements for sensitive projects
 - **Team Collaboration** - Multi-designer projects
-- **License Types** - Personal, commercial licensing
-- **Review System** - Multi-criteria ratings
-- **Activity Logs** - Complete order timeline
+- **License Types** - Personal, commercial licensing options
+- **Review System** - Multi-criteria ratings (quality, communication, delivery time)
+- **Activity Logs** - Complete order timeline and version history
+- **Auto/Manual Delivery** - Flexible delivery methods like other products
+- **Wallet Integration** - Designer wallet with commission tracking
+
+**Note**: Design services leverage the same seller dashboard, inventory management, and payment systems as game accounts, with additional specialized features for creative workflows.
 
 </details>
 
