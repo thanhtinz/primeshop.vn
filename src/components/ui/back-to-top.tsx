@@ -65,7 +65,7 @@ export const BackToTop = forwardRef<HTMLButtonElement, {}>((props, ref) => {
       ref={ref}
       onClick={scrollToTop}
       className={cn(
-        'fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full',
+        'fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 h-12 w-12 rounded-full',
         'flex items-center justify-center',
         'transition-all duration-300 ease-out',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',

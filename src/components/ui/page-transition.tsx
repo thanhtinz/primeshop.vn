@@ -42,7 +42,6 @@ export const PageTransition = ({ children }: PageTransitionProps) => {
         exit="out"
         variants={pageVariants}
         transition={pageTransition}
-        style={{ minHeight: '100vh' }}
       >
         {children}
       </motion.div>

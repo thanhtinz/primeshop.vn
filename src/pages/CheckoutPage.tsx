@@ -1,28 +1,38 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Shield, Wallet, CreditCard, LogIn, Loader2, Store, Tag, Crown } from 'lucide-react';
+import { ChevronRight, Shield, Wallet, CreditCard, LogIn, Loader2, Store, Tag, Crown, Bitcoin } from 'lucide-react';
 import { PaymentLoadingOverlay } from '@/components/payment/PaymentLoadingOverlay';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useSiteSettings, useSiteSetting } from '@/hooks/useSiteSettings';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { sendDiscordNotification } from '@/hooks/useDiscordNotify';
 import { processAutoDelivery } from '@/hooks/useAutoDelivery';
+import { CryptoPaymentModal } from '@/components/payment/CryptoPaymentModal';
 
 const PayPalIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
     <path fill="#003087" d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.767.767 0 0 1 .757-.64h6.654c2.204 0 3.935.583 5.15 1.73.606.574 1.063 1.248 1.357 2.005.315.8.42 1.7.308 2.672-.27 2.291-1.246 4.093-2.907 5.357-1.553 1.183-3.467 1.783-5.694 1.783H8.29a.767.767 0 0 0-.757.64l-.457 2.97z"/>
     <path fill="#0070BA" d="M19.588 7.957c-.084.697-.233 1.355-.454 1.974a6.882 6.882 0 0 1-1.45 2.377c-1.455 1.557-3.552 2.324-6.237 2.324H9.42a.767.767 0 0 0-.757.64l-.858 5.577a.641.641 0 0 0 .633.74h3.263a.767.767 0 0 0 .757-.64l.325-2.113a.767.767 0 0 1 .757-.64h1.61c2.042 0 3.672-.504 4.85-1.5 1.102-.93 1.88-2.244 2.314-3.907.35-1.332.387-2.474.112-3.407a3.587 3.587 0 0 0-1.288-1.865c-.207-.16-.432-.304-.673-.432-.078-.042-.16-.084-.246-.125.002.006.003.012.003.018a7.75 7.75 0 0 1-.634 1.599z"/>
+  </svg>
+);
+
+// USDT/Tether icon
+const USDTIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+    <path fill="#fff" d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117"/>
   </svg>
 );
 
@@ -43,9 +53,15 @@ const CheckoutPage = () => {
 
   const [referralCode, setReferralCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'balance' | 'payos' | 'paypal'>('payos');
+  const [paymentMethod, setPaymentMethod] = useState<'balance' | 'payos' | 'paypal' | 'crypto'>('payos');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
+  const [cryptoData, setCryptoData] = useState<any>(null);
+
+  // Get crypto payment setting
+  const { data: fpaymentEnabled } = useSiteSetting('fpayment_enabled');
+  const isCryptoAvailable = fpaymentEnabled === true || fpaymentEnabled === 'true';
 
   // Initialize customer fields from profile and referral code from cart
   useEffect(() => {
@@ -69,13 +85,15 @@ const CheckoutPage = () => {
     if (currency === 'USD') {
       if (paypalEnabled) {
         setPaymentMethod('paypal');
+      } else if (isCryptoAvailable) {
+        setPaymentMethod('crypto');
       }
     } else {
-      if (paymentMethod === 'paypal') {
+      if (paymentMethod === 'paypal' && !paypalEnabled) {
         setPaymentMethod('payos');
       }
     }
-  }, [currency, paypalEnabled]);
+  }, [currency, paypalEnabled, isCryptoAvailable]);
 
   // Calculate VIP discount
   const vipDiscountPercent = vipLevel?.discount_percent || 0;
@@ -134,7 +152,7 @@ const CheckoutPage = () => {
         const customFieldValuesWithNames = Object.entries(item.customFieldValues).reduce((acc, [fieldId, value]) => {
           const fieldDef = (item.product as any).custom_fields?.find((f: any) => f.id === fieldId);
           const fieldName = fieldDef?.field_name || fieldId;
-          acc[fieldName] = value;
+          acc[fieldName] = String(value);
           return acc;
         }, {} as Record<string, string>);
 
@@ -329,9 +347,44 @@ const CheckoutPage = () => {
 
       await refreshProfile();
 
+      // Handle Crypto payment - show modal
+      if (paymentMethod === 'crypto') {
+        try {
+          const { data, error } = await supabase.functions.invoke('fpayment-usdt', {
+            body: {
+              amount: finalAmount,
+              currency: currency,
+              type: 'order',
+              orderId: orderIds[0] || null, // Associate with first order
+              description: `Thanh toán đơn hàng - ${finalAmount} ${currency}`,
+            }
+          });
+
+          if (error) throw error;
+          if (data?.data) {
+            setCryptoData({
+              paymentId: data.data.payment_id,
+              amountUsdt: data.data.amount_usdt,
+              amountOriginal: data.data.amount_original,
+              currencyOriginal: data.data.currency_original,
+              walletAddress: data.data.wallet_address,
+              qrCode: data.data.qr_code,
+              network: data.data.network,
+              expiresAt: data.data.expires_at,
+            });
+            setShowCryptoModal(true);
+            setIsProcessing(false);
+            return; // Don't proceed to success yet - wait for payment confirmation
+          }
+        } catch (err) {
+          console.error('Error creating crypto payment:', err);
+          toast.error('Không thể tạo thanh toán crypto');
+        }
+      }
+
       // If PayOS payment was used, request creation of checkoutUrl/qr for created payments
       try {
-        if (paymentMethod !== 'balance') {
+        if (paymentMethod === 'payos') {
           const createdPayments = (window as any).__createdPayments || [];
           for (const p of createdPayments) {
             try {
@@ -478,7 +531,7 @@ const CheckoutPage = () => {
             <div className="rounded-xl border border-border bg-card p-4 md:p-6">
               <h2 className="mb-4 text-lg font-semibold">{t('paymentMethod')}</h2>
               
-              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'balance' | 'payos' | 'paypal')}>
+              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'balance' | 'payos' | 'paypal' | 'crypto')}>
                 <div className={`flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'balance' ? 'border-primary bg-primary/5' : 'border-border hover:bg-secondary/50'} ${!canPayWithBalance ? 'opacity-50' : ''}`}>
                   <RadioGroupItem value="balance" id="balance" disabled={!canPayWithBalance} />
                   <Label htmlFor="balance" className="flex-1 cursor-pointer">
@@ -521,6 +574,22 @@ const CheckoutPage = () => {
                           ? `${t('paypalPayment')} $${convertToUSD(finalAmount).toFixed(2)} USD`
                           : `${t('internationalPayment')} - $${convertToUSD(finalAmount).toFixed(2)} USD`
                         }
+                      </p>
+                    </Label>
+                  </div>
+                )}
+
+                {isCryptoAvailable && (
+                  <div className={`flex items-center space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${paymentMethod === 'crypto' ? 'border-[#26A17B] bg-[#26A17B]/5' : 'border-border hover:bg-secondary/50'}`}>
+                    <RadioGroupItem value="crypto" id="crypto" />
+                    <Label htmlFor="crypto" className="flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <USDTIcon />
+                        <span className="font-medium">USDT (Crypto)</span>
+                        <Badge variant="secondary" className="text-xs">TRC20</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {`Thanh toán ~${convertToUSD(finalAmount).toFixed(2)} USDT qua Tether`}
                       </p>
                     </Label>
                   </div>
@@ -684,6 +753,11 @@ const CheckoutPage = () => {
                     <PayPalIcon />
                     <span className="ml-2">PayPal</span>
                   </>
+                ) : paymentMethod === 'crypto' ? (
+                  <>
+                    <USDTIcon />
+                    <span className="ml-2">USDT</span>
+                  </>
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5 mr-2" />
@@ -700,6 +774,22 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Crypto Payment Modal */}
+      {cryptoData && (
+        <CryptoPaymentModal
+          isOpen={showCryptoModal}
+          onClose={() => setShowCryptoModal(false)}
+          paymentId={cryptoData.paymentId}
+          amountUsdt={cryptoData.amountUsdt}
+          amountOriginal={cryptoData.amountOriginal}
+          currencyOriginal={cryptoData.currencyOriginal}
+          walletAddress={cryptoData.walletAddress}
+          qrCode={cryptoData.qrCode}
+          network={cryptoData.network}
+          expiresAt={cryptoData.expiresAt}
+        />
+      )}
     </Layout>
   );
 };

@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,6 +9,7 @@ const corsHeaders = {
 interface SendEmailRequest {
   template_name?: string;
   recipient: string;
+  recipient_user_id?: string;
   variables?: Record<string, string>;
   language?: 'vi' | 'en';
   subject?: string;
@@ -27,39 +26,24 @@ const generateEmailHTML = (content: string, siteName: string, preheader?: string
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${siteName}</title>
-  <!--[if mso]>
-  <style type="text/css">
-    table, td { font-family: Arial, sans-serif; }
-  </style>
-  <![endif]-->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.6;
       color: #1a1a2e;
       background-color: #f8fafc;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
     
-    .email-wrapper {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
+    .email-wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
     
     .email-container {
       background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
       border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       border: 1px solid #e2e8f0;
     }
@@ -70,59 +54,20 @@ const generateEmailHTML = (content: string, siteName: string, preheader?: string
       text-align: center;
     }
     
-    .logo {
-      font-size: 28px;
-      font-weight: 700;
-      color: #ffffff;
-      text-decoration: none;
-      letter-spacing: -0.5px;
-    }
-    
-    .email-body {
-      padding: 40px;
-    }
-    
-    .email-content {
-      font-size: 15px;
-      color: #334155;
-      line-height: 1.8;
-    }
-    
-    .email-content p {
-      margin: 0 0 16px 0;
-    }
-    
-    .email-content p:last-child {
-      margin-bottom: 0;
-    }
+    .logo { font-size: 28px; font-weight: 700; color: #ffffff; }
+    .email-body { padding: 40px; }
+    .email-content { font-size: 15px; color: #334155; line-height: 1.8; }
+    .email-content p { margin: 0 0 16px 0; }
     
     .highlight-box {
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-      border-left: 4px solid #0ea5e9;
-      padding: 20px 24px;
-      margin: 24px 0;
-      border-radius: 0 12px 12px 0;
-    }
-    
-    .highlight-box p {
-      margin: 0;
-      color: #0c4a6e;
-      font-weight: 500;
-    }
-    
-    .code-box {
-      background: #1e293b;
-      color: #f8fafc;
-      padding: 16px 24px;
-      border-radius: 8px;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 18px;
-      letter-spacing: 4px;
-      text-align: center;
+      border-radius: 12px;
+      padding: 20px;
       margin: 20px 0;
+      border-left: 4px solid #3b82f6;
     }
     
-    .button {
+    .btn {
       display: inline-block;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #ffffff !important;
@@ -130,68 +75,17 @@ const generateEmailHTML = (content: string, siteName: string, preheader?: string
       padding: 14px 32px;
       border-radius: 8px;
       font-weight: 600;
-      font-size: 15px;
       margin: 20px 0;
-      transition: all 0.2s ease;
-    }
-    
-    .button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-    
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-      margin: 32px 0;
     }
     
     .email-footer {
       background: #f8fafc;
-      padding: 32px 40px;
+      padding: 24px 40px;
       text-align: center;
       border-top: 1px solid #e2e8f0;
     }
     
-    .footer-text {
-      font-size: 13px;
-      color: #64748b;
-      margin: 0;
-    }
-    
-    .footer-text a {
-      color: #667eea;
-      text-decoration: none;
-    }
-    
-    .social-links {
-      margin: 16px 0;
-    }
-    
-    .social-links a {
-      display: inline-block;
-      margin: 0 8px;
-      color: #64748b;
-      text-decoration: none;
-    }
-    
-    @media only screen and (max-width: 600px) {
-      .email-wrapper {
-        padding: 20px 12px;
-      }
-      
-      .email-header {
-        padding: 24px 20px;
-      }
-      
-      .email-body {
-        padding: 24px 20px;
-      }
-      
-      .email-footer {
-        padding: 24px 20px;
-      }
-    }
+    .footer-text { font-size: 13px; color: #64748b; }
   </style>
 </head>
 <body>
@@ -207,12 +101,7 @@ const generateEmailHTML = (content: string, siteName: string, preheader?: string
         </div>
       </div>
       <div class="email-footer">
-        <p class="footer-text">
-          © ${new Date().getFullYear()} ${siteName}. All rights reserved.
-        </p>
-        <p class="footer-text" style="margin-top: 8px;">
-          Email này được gửi tự động, vui lòng không trả lời trực tiếp.
-        </p>
+        <p class="footer-text">© ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
       </div>
     </div>
   </div>
@@ -220,76 +109,253 @@ const generateEmailHTML = (content: string, siteName: string, preheader?: string
 </html>`;
 };
 
-// Convert plain text body to HTML paragraphs with smart formatting
+// Convert plain text to HTML paragraphs
 const formatBodyToHTML = (body: string): string => {
-  // Split by lines and process each
-  const lines = body.split('\n');
-  let html = '';
-  let inList = false;
+  return body
+    .split('\n\n')
+    .map(paragraph => {
+      const trimmed = paragraph.trim();
+      if (!trimmed) return '';
+      
+      // Check for highlight boxes (lines starting with special chars)
+      if (trimmed.startsWith('Mã') || trimmed.startsWith('Code') || trimmed.includes(':')) {
+        const lines = trimmed.split('\n').filter(l => l.trim());
+        if (lines.length > 1 || trimmed.includes(':')) {
+          return `<div class="highlight-box">${lines.map(l => `<p>${l}</p>`).join('')}</div>`;
+        }
+      }
+      
+      // Check for links
+      if (trimmed.includes('http://') || trimmed.includes('https://')) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const withLinks = trimmed.replace(urlRegex, '<a href="$1" class="btn">Xem chi tiết</a>');
+        return `<p>${withLinks}</p>`;
+      }
+      
+      return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+    })
+    .filter(p => p)
+    .join('');
+};
+
+// Get or create system mailbox for sending automated emails
+const getOrCreateSystemMailbox = async (supabaseClient: any, siteName: string) => {
+  // Get default domain
+  const { data: defaultDomain } = await supabaseClient
+    .from('mail_domains')
+    .select('id, domain')
+    .eq('is_default', true)
+    .eq('is_active', true)
+    .single();
+
+  if (!defaultDomain) {
+    console.log('[send-email] No default mail domain found');
+    return null;
+  }
+
+  const systemEmail = `noreply@${defaultDomain.domain}`;
   
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    if (!trimmed) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      continue;
+  // Check if system mailbox exists
+  let { data: mailbox } = await supabaseClient
+    .from('mailboxes')
+    .select('id, email_address, display_name')
+    .eq('email_address', systemEmail)
+    .single();
+
+  if (!mailbox) {
+    // Create system mailbox
+    const { data: newMailbox, error } = await supabaseClient
+      .from('mailboxes')
+      .insert({
+        email_address: systemEmail,
+        display_name: siteName,
+        domain_id: defaultDomain.id,
+        local_part: 'noreply',
+        role: 'super_admin',
+        is_active: true,
+        can_send_external: true,
+        can_receive_external: false,
+        quota_mb: 10240, // 10GB
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[send-email] Failed to create system mailbox:', error);
+      return null;
     }
     
-    // Check if it's a list item (starts with - or •)
-    if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
-      if (!inList) {
-        html += '<ul style="margin: 16px 0; padding-left: 20px;">';
-        inList = true;
-      }
-      html += `<li style="margin: 8px 0; color: #334155;">${trimmed.slice(1).trim()}</li>`;
-    }
-    // Check for special blocks (code/OTP format)
-    else if (/^\d{4,8}$/.test(trimmed) || /^[A-Z0-9]{6,}$/.test(trimmed)) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      html += `<div class="code-box">${trimmed}</div>`;
-    }
-    // Check for key-value pairs (contains : in middle)
-    else if (trimmed.includes(':') && !trimmed.startsWith('http')) {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      const [key, ...valueParts] = trimmed.split(':');
-      const value = valueParts.join(':').trim();
-      if (value) {
-        html += `<p style="margin: 8px 0;"><strong style="color: #1e293b;">${key}:</strong> ${value}</p>`;
-      } else {
-        html += `<p style="margin: 16px 0 8px 0;"><strong style="color: #1e293b; font-size: 16px;">${key}</strong></p>`;
-      }
-    }
-    // Regular paragraph
-    else {
-      if (inList) {
-        html += '</ul>';
-        inList = false;
-      }
-      // Check if it's a greeting or signature
-      if (trimmed.startsWith('Xin chào') || trimmed.startsWith('Hello') || trimmed.startsWith('Hi ')) {
-        html += `<p style="margin: 0 0 24px 0; font-size: 16px; color: #1e293b;">${trimmed}</p>`;
-      } else if (trimmed.startsWith('Trân trọng') || trimmed.startsWith('Best regards') || trimmed.startsWith('Regards')) {
-        html += `<p style="margin: 32px 0 0 0; color: #64748b;">${trimmed}</p>`;
-      } else {
-        html += `<p style="margin: 0 0 16px 0;">${trimmed}</p>`;
-      }
+    mailbox = newMailbox;
+    console.log('[send-email] Created system mailbox:', systemEmail);
+  }
+
+  return mailbox;
+};
+
+// Deliver email to recipient's mailbox
+const deliverToMailbox = async (
+  supabaseClient: any,
+  systemMailbox: any,
+  recipientEmail: string,
+  subject: string,
+  htmlBody: string,
+  textBody: string,
+  templateName?: string
+) => {
+  // Get system mailbox's sent folder
+  let { data: sentFolder } = await supabaseClient
+    .from('mail_folders')
+    .select('id')
+    .eq('mailbox_id', systemMailbox.id)
+    .eq('slug', 'sent')
+    .single();
+
+  if (!sentFolder) {
+    // Create sent folder if not exists
+    const { data: newFolder } = await supabaseClient
+      .from('mail_folders')
+      .insert({
+        mailbox_id: systemMailbox.id,
+        name: 'Đã gửi',
+        slug: 'sent',
+        icon: 'send',
+        position: 2,
+        is_system: true,
+      })
+      .select()
+      .single();
+    sentFolder = newFolder;
+  }
+
+  // Generate message ID
+  const messageId = `<${crypto.randomUUID()}@${systemMailbox.email_address.split('@')[1]}>`;
+  const preview = textBody.substring(0, 200);
+
+  // Create message in system's sent folder
+  const { data: sentMessage, error: sentError } = await supabaseClient
+    .from('mail_messages')
+    .insert({
+      mailbox_id: systemMailbox.id,
+      folder_id: sentFolder?.id,
+      message_id: messageId,
+      from_address: systemMailbox.email_address,
+      from_name: systemMailbox.display_name || 'System',
+      to_addresses: [{ email: recipientEmail }],
+      subject,
+      body_text: textBody,
+      body_html: htmlBody,
+      preview,
+      priority: 'normal',
+      is_sent: true,
+      is_read: true,
+      sent_at: new Date().toISOString(),
+      metadata: { template_name: templateName, type: 'system_notification' },
+    })
+    .select()
+    .single();
+
+  if (sentError) {
+    console.error('[send-email] Failed to save sent message:', sentError);
+  }
+
+  // Find recipient's mailbox and deliver to their inbox
+  const { data: recipientMailbox } = await supabaseClient
+    .from('mailboxes')
+    .select('id')
+    .eq('email_address', recipientEmail)
+    .eq('is_active', true)
+    .single();
+
+  if (recipientMailbox) {
+    // Get recipient's inbox folder
+    const { data: inboxFolder } = await supabaseClient
+      .from('mail_folders')
+      .select('id')
+      .eq('mailbox_id', recipientMailbox.id)
+      .eq('slug', 'inbox')
+      .single();
+
+    if (inboxFolder) {
+      // Deliver to recipient's inbox
+      await supabaseClient.from('mail_messages').insert({
+        mailbox_id: recipientMailbox.id,
+        folder_id: inboxFolder.id,
+        message_id: messageId,
+        from_address: systemMailbox.email_address,
+        from_name: systemMailbox.display_name || 'System',
+        to_addresses: [{ email: recipientEmail }],
+        subject,
+        body_text: textBody,
+        body_html: htmlBody,
+        preview,
+        priority: 'normal',
+        is_read: false,
+        received_at: new Date().toISOString(),
+        metadata: { template_name: templateName, type: 'system_notification' },
+      });
+
+      console.log(`[send-email] Delivered to mailbox: ${recipientEmail}`);
+      return { delivered: true, method: 'internal_mailbox' };
     }
   }
+
+  // Recipient doesn't have internal mailbox
+  console.log(`[send-email] Recipient ${recipientEmail} has no internal mailbox`);
+  return { delivered: false, method: 'external_pending' };
+};
+
+// Send email externally via SMTP
+const sendViaSMTP = async (
+  from: string,
+  fromName: string,
+  to: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ success: boolean; error?: string }> => {
+  const SMTP_HOST = Deno.env.get("SMTP_HOST");
+  const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "587");
+  const SMTP_USER = Deno.env.get("SMTP_USER");
+  const SMTP_PASS = Deno.env.get("SMTP_PASS");
+  const SMTP_SECURE = Deno.env.get("SMTP_SECURE") === "true";
   
-  if (inList) {
-    html += '</ul>';
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.log('[send-email] SMTP not configured, skipping external delivery');
+    return { success: false, error: 'SMTP not configured' };
   }
-  
-  return html;
+
+  try {
+    // Import SMTPClient from denomailer
+    const { SMTPClient } = await import("https://deno.land/x/denomailer@1.6.0/mod.ts");
+    
+    const client = new SMTPClient({
+      connection: {
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
+        tls: SMTP_SECURE,
+        auth: {
+          username: SMTP_USER,
+          password: SMTP_PASS,
+        },
+      },
+    });
+
+    await client.send({
+      from: { address: from, name: fromName },
+      to: [{ address: to }],
+      subject,
+      content: text,
+      html,
+    });
+
+    await client.close();
+
+    console.log(`[send-email] Email sent via SMTP to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[send-email] SMTP error:', error);
+    return { success: false, error: String(error) };
+  }
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -312,15 +378,22 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: settings } = await supabaseClient
       .from("site_settings")
       .select("key, value")
-      .in("key", ["site_name", "smtp_from", "site_url", "support_email"]);
+      .in("key", ["site_name", "site_url", "support_email"]);
 
-    const siteName = settings?.find((s: { key: string; value: unknown }) => s.key === "site_name")?.value || "DigiShop";
-    const smtpFrom = settings?.find((s: { key: string; value: unknown }) => s.key === "smtp_from")?.value || "onboarding@resend.dev";
-    const siteUrl = settings?.find((s: { key: string; value: unknown }) => s.key === "site_url")?.value || "";
-    const supportEmail = settings?.find((s: { key: string; value: unknown }) => s.key === "support_email")?.value || "";
+    const siteName = settings?.find((s: { key: string }) => s.key === "site_name")?.value || "DigiShop";
+    const siteUrl = settings?.find((s: { key: string }) => s.key === "site_url")?.value || "";
+    const supportEmail = settings?.find((s: { key: string }) => s.key === "support_email")?.value || "";
+
+    // Get or create system mailbox
+    const systemMailbox = await getOrCreateSystemMailbox(supabaseClient, String(siteName));
+    
+    if (!systemMailbox) {
+      throw new Error("Mail server not configured. Please set up mail domains first.");
+    }
 
     let subject: string;
     let htmlBody: string;
+    let textBody: string;
     let preheader: string | undefined;
 
     // Always add common variables
@@ -335,15 +408,9 @@ const handler = async (req: Request): Promise<Response> => {
     if (directSubject && directHtml) {
       // Direct email
       subject = directSubject;
+      textBody = directHtml.replace(/<[^>]*>/g, '');
       const formattedContent = formatBodyToHTML(directHtml);
       htmlBody = generateEmailHTML(formattedContent, String(siteName));
-      
-      await supabaseClient.from("email_logs").insert({
-        recipient,
-        subject,
-        template_name: template_name || 'direct_email',
-        status: "pending",
-      });
     } else if (template_name) {
       // Template-based email
       const { data: template, error: templateError } = await supabaseClient
@@ -355,6 +422,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (templateError || !template) {
         console.log(`[send-email] Template ${template_name} not found or inactive`);
+        
+        // Log failed attempt
+        await supabaseClient.from("email_logs").insert({
+          recipient,
+          subject: `Template: ${template_name}`,
+          template_name,
+          status: "failed",
+          error_message: `Template ${template_name} not found`,
+        });
+
         return new Response(
           JSON.stringify({ error: `Template ${template_name} not found` }),
           { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -379,6 +456,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Extract first line as preheader
       const firstLine = emailBody.split('\n').find((l: string) => l.trim());
       preheader = firstLine?.substring(0, 100);
+      textBody = emailBody;
 
       // Convert body to HTML and wrap in template
       const formattedContent = formatBodyToHTML(emailBody);
@@ -392,42 +470,83 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send email via Resend API
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: `${siteName} <${smtpFrom}>`,
-        to: [recipient],
-        subject: subject,
-        html: htmlBody,
-      }),
-    });
+    // Save to internal mail server (for admin to view)
+    const deliveryResult = await deliverToMailbox(
+      supabaseClient,
+      systemMailbox,
+      recipient,
+      subject,
+      htmlBody,
+      textBody,
+      template_name
+    );
 
-    const emailData = await emailResponse.json();
-
-    if (!emailResponse.ok) {
-      console.error(`[send-email] Resend API error:`, emailData);
-      throw new Error(emailData.message || "Failed to send email");
+    // Send externally via SMTP if recipient doesn't have internal mailbox
+    let smtpResult = { success: false, error: '' };
+    if (!deliveryResult.delivered) {
+      smtpResult = await sendViaSMTP(
+        systemMailbox.email_address,
+        systemMailbox.display_name || String(siteName),
+        recipient,
+        subject,
+        htmlBody,
+        textBody
+      );
     }
 
-    console.log(`[send-email] Email sent successfully to ${recipient}:`, emailData);
+    // Determine final status
+    const finalStatus = deliveryResult.delivered || smtpResult.success ? "sent" : "failed";
+    const deliveryMethod = deliveryResult.delivered 
+      ? 'internal_mailbox' 
+      : (smtpResult.success ? 'smtp' : 'failed');
 
-    // Log as sent
+    // Log to email_logs
     await supabaseClient.from("email_logs").insert({
       recipient,
       subject,
       template_name: template_name || 'direct_email',
-      status: "sent",
+      status: finalStatus,
+      error_message: smtpResult.error || null,
+      metadata: {
+        delivery_method: deliveryMethod,
+        delivered_to_mailbox: deliveryResult.delivered,
+        smtp_sent: smtpResult.success,
+        system_mailbox: systemMailbox.email_address,
+      },
     });
 
-    return new Response(JSON.stringify({ success: true, data: emailData }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    if (finalStatus === "failed") {
+      console.log(`[send-email] Failed to send email to ${recipient}: ${smtpResult.error}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: smtpResult.error || 'Failed to send email',
+          saved_to_mailserver: true,
+        }), 
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log(`[send-email] Email sent successfully to ${recipient} via ${deliveryMethod}`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        data: { 
+          id: crypto.randomUUID(),
+          method: deliveryMethod,
+          delivered_to_mailbox: deliveryResult.delivered,
+          smtp_sent: smtpResult.success,
+        } 
+      }), 
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("[send-email] Error:", errorMessage);

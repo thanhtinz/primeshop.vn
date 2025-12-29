@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { SeasonalParticles } from '@/components/effects/SeasonalParticles';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { ProductComparisonBar } from '@/components/product/ProductComparisonBar';
 import { RecentlyViewedSection } from '@/components/product/RecentlyViewedSection';
@@ -19,12 +18,11 @@ export function Layout({ children, showRecentlyViewed = false }: LayoutProps) {
   useUpdateOnlineStatus();
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen-mobile flex-col overflow-x-clip">
       {/* Global background decorations */}
       <BackgroundDecorations />
-      <SeasonalParticles />
       <Header />
-      <main className="flex-1 pb-16 relative">{children}</main>
+      <main className="flex-1 pb-20 md:pb-4 relative">{children}</main>
       {showRecentlyViewed && <RecentlyViewedSection />}
       <Footer />
       <BackToTop />

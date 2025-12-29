@@ -1018,6 +1018,12 @@ Best regards,
                   Thêm nội dung tiếng Anh (subject_en, body_en) để email tự động gửi theo ngôn ngữ người dùng chọn.
                 </p>
               </div>
+              <div className="mt-3 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                <p className="font-medium text-green-800 dark:text-green-200 text-sm">📧 Mail Server Nội bộ</p>
+                <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                  Email tự động được gửi qua hệ thống Mail Server nội bộ. Admin có thể xem tất cả email đã gửi tại <a href="/admin/mail-server" className="underline font-medium">Mail Server</a>.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1027,7 +1033,7 @@ Best regards,
             <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
               <div>
                 <CardTitle className="text-base sm:text-lg">Lịch sử gửi email</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">100 email gần nhất</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Email tự động được gửi qua Mail Server nội bộ</CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => refetchLogs()} className="w-full sm:w-auto">
                 <RefreshCw className="h-4 w-4 mr-2" />

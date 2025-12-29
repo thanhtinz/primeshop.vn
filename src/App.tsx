@@ -76,6 +76,10 @@ const SmmOrderPage = lazy(() => import("./pages/smm/SmmOrderPage"));
 const SmmBulkOrderPage = lazy(() => import("./pages/smm/SmmBulkOrderPage"));
 const SmmOrdersPage = lazy(() => import("./pages/smm/SmmOrdersPage"));
 
+// Mailbox pages
+const MailboxPage = lazy(() => import("./pages/MailboxPage"));
+const MailSettingsPage = lazy(() => import("./pages/MailSettingsPage"));
+
 // OAuth pages
 const OAuthSuccessPage = lazy(() => import("./pages/OAuthSuccessPage"));
 const OAuthCallbackPage = lazy(() => import("./pages/OAuthCallbackPage"));
@@ -194,6 +198,7 @@ const AdminDesignCategories = lazy(() => import("./pages/admin/AdminDesignCatego
 const AdminDesignServices = lazy(() => import("./pages/admin/AdminDesignServices"));
 const AdminDesignOrders = lazy(() => import("./pages/admin/AdminDesignOrders"));
 const AdminDesignManagers = lazy(() => import("./pages/admin/AdminDesignManagers"));
+const AdminMailServer = lazy(() => import("./pages/admin/AdminMailServer"));
 const AdminDesignLicenses = lazy(() => import("./pages/admin/AdminDesignLicenses"));
 const AdminDesignFees = lazy(() => import("./pages/admin/AdminDesignFees"));
 const AdminDesignStats = lazy(() => import("./pages/admin/AdminDesignStats"));
@@ -329,6 +334,12 @@ const AppRoutes = () => {
         <Route path="/smm/order" element={<SmmOrderPage />} />
         <Route path="/smm/bulk" element={<SmmBulkOrderPage />} />
         <Route path="/smm/orders" element={<SmmOrdersPage />} />
+        
+        {/* Mail routes */}
+        <Route path="/mail" element={<MailboxPage />} />
+        <Route path="/mail/:folder" element={<MailboxPage />} />
+        <Route path="/mail/settings" element={<MailSettingsPage />} />
+        
         <Route path="/user/:username" element={<UserProfilePage />} />
         <Route path="/newsfeed" element={<NewsfeedPage />} />
         <Route path="/post/:postId" element={<PostDetailPage />} />
@@ -490,6 +501,7 @@ const AppRoutes = () => {
           <Route path="secrets" element={<AdminSecrets />} />
           <Route path="discord-bot" element={<AdminDiscordBot />} />
           <Route path="notification-templates" element={<AdminNotificationTemplates />} />
+          <Route path="mail-server" element={<AdminMailServer />} />
           
           <Route path="settings" element={<AdminSettings />} />
           <Route path="static-pages" element={<AdminStaticPages />} />

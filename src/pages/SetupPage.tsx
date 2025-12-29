@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Server, Database, User, Shield, Mail, Check, X, ArrowRight, 
+  Server, Database, User, Shield, Check, X, ArrowRight, 
   ArrowLeft, Loader2, Eye, EyeOff, Globe, CheckCircle2, 
-  Settings, AlertCircle, Sparkles, Lock, Rocket
+  Settings, AlertCircle, Sparkles, Lock, Rocket, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,11 +36,11 @@ interface SetupData {
   supportEmail: string;
   senderEmail: string;
   
-  // Email SMTP
+  // SMTP Settings
   smtpHost: string;
   smtpPort: string;
   smtpUser: string;
-  smtpPassword: string;
+  smtpPass: string;
   smtpSecure: boolean;
 }
 
@@ -73,7 +73,7 @@ const SetupPage = () => {
     smtpHost: '',
     smtpPort: '587',
     smtpUser: '',
-    smtpPassword: '',
+    smtpPass: '',
     smtpSecure: false,
   });
 
@@ -82,7 +82,7 @@ const SetupPage = () => {
     { id: 'database', title: 'Database', icon: Database, description: 'Cấu hình MySQL' },
     { id: 'admin', title: 'Admin', icon: Shield, description: 'Tài khoản quản trị' },
     { id: 'site', title: 'Website', icon: Globe, description: 'Thông tin website' },
-    { id: 'email', title: 'Email', icon: Mail, description: 'Cấu hình SMTP (tùy chọn)' },
+    { id: 'smtp', title: 'Email SMTP', icon: Mail, description: 'Cấu hình gửi email' },
     { id: 'review', title: 'Xác nhận', icon: CheckCircle2, description: 'Kiểm tra và hoàn tất' },
   ];
 
@@ -183,8 +183,8 @@ const SetupPage = () => {
           return false;
         }
         return true;
-        
-      case 4: // Email (optional)
+      
+      case 4: // SMTP - optional, always pass
         return true;
         
       default:
@@ -589,7 +589,7 @@ const SetupPage = () => {
           </motion.div>
         );
 
-      case 4: // Email SMTP
+      case 4: // SMTP
         return (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -598,12 +598,13 @@ const SetupPage = () => {
           >
             <Alert>
               <Mail className="h-4 w-4" />
-              <AlertTitle>Tùy chọn</AlertTitle>
+              <AlertTitle>Cấu hình SMTP</AlertTitle>
               <AlertDescription>
-                Bạn có thể bỏ qua phần này và cấu hình sau trong Admin Panel.
+                Hệ thống sử dụng SMTP để gửi email tự động (OTP, đơn hàng, thông báo...). 
+                Bạn có thể bỏ qua bước này và cấu hình sau trong Admin Panel.
               </AlertDescription>
             </Alert>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="smtpHost">SMTP Host</Label>
@@ -614,6 +615,7 @@ const SetupPage = () => {
                   placeholder="smtp.gmail.com"
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="smtpPort">SMTP Port</Label>
                 <Input
@@ -636,28 +638,49 @@ const SetupPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="smtpPassword">SMTP Password / App Password</Label>
+              <Label htmlFor="smtpPass">SMTP Password</Label>
               <div className="relative">
                 <Input
-                  id="smtpPassword"
-                  type={showPasswords.smtpPassword ? 'text' : 'password'}
-                  value={data.smtpPassword}
-                  onChange={(e) => updateData('smtpPassword', e.target.value)}
-                  placeholder="••••••••"
+                  id="smtpPass"
+                  type={showPasswords.smtpPass ? 'text' : 'password'}
+                  value={data.smtpPass}
+                  onChange={(e) => updateData('smtpPass', e.target.value)}
+                  placeholder="App password hoặc SMTP password"
+                  className="pr-10"
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => togglePassword('smtpPassword')}
+                  onClick={() => togglePassword('smtpPass')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
-                  {showPasswords.smtpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+                  {showPasswords.smtpPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Với Gmail: Sử dụng App Password thay vì mật khẩu thường
+                Với Gmail, sử dụng App Password thay vì mật khẩu thường
               </p>
+            </div>
+
+            <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50">
+              <input
+                type="checkbox"
+                id="smtpSecure"
+                checked={data.smtpSecure}
+                onChange={(e) => updateData('smtpSecure', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="smtpSecure" className="text-sm cursor-pointer">
+                Sử dụng TLS/SSL (khuyến nghị cho port 465)
+              </Label>
+            </div>
+
+            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Hướng dẫn nhanh:</p>
+              <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <li>• Gmail: smtp.gmail.com, port 587, TLS off</li>
+                <li>• Outlook: smtp.office365.com, port 587, TLS off</li>
+                <li>• Custom: Tùy theo nhà cung cấp SMTP của bạn</li>
+              </ul>
             </div>
           </motion.div>
         );
@@ -735,20 +758,30 @@ const SetupPage = () => {
                     </div>
                   </div>
                   
-                  {data.smtpHost && (
-                    <div className="p-4 rounded-lg bg-muted/50 space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Mail className="h-4 w-4 text-orange-500" />
-                        Email SMTP
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <span className="text-muted-foreground">Host:</span>
-                        <span>{data.smtpHost}:{data.smtpPort}</span>
-                        <span className="text-muted-foreground">User:</span>
-                        <span>{data.smtpUser}</span>
-                      </div>
+                  <div className="p-4 rounded-lg bg-muted/50 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Mail className="h-4 w-4 text-orange-500" />
+                      Email SMTP
                     </div>
-                  )}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {data.smtpHost ? (
+                        <>
+                          <span className="text-muted-foreground">Host:</span>
+                          <span>{data.smtpHost}:{data.smtpPort}</span>
+                          <span className="text-muted-foreground">User:</span>
+                          <span>{data.smtpUser || 'N/A'}</span>
+                          <span className="text-muted-foreground">TLS:</span>
+                          <span>{data.smtpSecure ? 'Bật' : 'Tắt'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-muted-foreground col-span-2 italic">
+                            Chưa cấu hình (có thể cấu hình sau)
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 <Alert>

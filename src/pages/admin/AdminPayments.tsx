@@ -102,6 +102,12 @@ const AdminPayments = () => {
     paypal_client_secret: '',
   });
 
+  const [fpaymentConfig, setFpaymentConfig] = useState({
+    fpayment_enabled: false,
+    fpayment_api_key: '',
+    fpayment_merchant_id: '',
+  });
+
   useEffect(() => {
     if (settings) {
       setPayosConfig({
@@ -114,6 +120,11 @@ const AdminPayments = () => {
         paypal_mode: settings.paypal_mode || 'sandbox',
         paypal_client_id: settings.paypal_client_id || '',
         paypal_client_secret: settings.paypal_client_secret || '',
+      });
+      setFpaymentConfig({
+        fpayment_enabled: settings.fpayment_enabled || false,
+        fpayment_api_key: settings.fpayment_api_key || '',
+        fpayment_merchant_id: settings.fpayment_merchant_id || '',
       });
     }
   }, [settings]);
@@ -131,6 +142,15 @@ const AdminPayments = () => {
     try {
       await updateSettings.mutateAsync(paypalConfig);
       toast.success('Đã lưu cấu hình PayPal');
+    } catch (error) {
+      toast.error('Lỗi khi lưu cấu hình');
+    }
+  };
+
+  const handleSaveFpaymentConfig = async () => {
+    try {
+      await updateSettings.mutateAsync(fpaymentConfig);
+      toast.success('Đã lưu cấu hình FPayment USDT');
     } catch (error) {
       toast.error('Lỗi khi lưu cấu hình');
     }
@@ -463,7 +483,7 @@ const AdminPayments = () => {
       </div>
 
       <Tabs defaultValue="payos" className="space-y-4">
-        <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:flex">
+        <TabsList className="w-full sm:w-auto grid grid-cols-5 sm:flex">
           <TabsTrigger value="payos" className="gap-2">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">PayOS</span>
@@ -473,6 +493,14 @@ const AdminPayments = () => {
             <DollarSign className="h-4 w-4" />
             <span className="hidden sm:inline">PayPal</span>
             <span className="sm:hidden text-xs">PayPal</span>
+          </TabsTrigger>
+          <TabsTrigger value="crypto" className="gap-2">
+            <svg className="h-4 w-4" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+              <path fill="#fff" d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117"/>
+            </svg>
+            <span className="hidden sm:inline">USDT</span>
+            <span className="sm:hidden text-xs">USDT</span>
           </TabsTrigger>
           <TabsTrigger value="refunds" className="gap-2">
             <History className="h-4 w-4" />
@@ -602,6 +630,78 @@ const AdminPayments = () => {
             </CardContent>
           </Card>
           <PaymentList paymentsList={paypalPayments || []} currency="USD" />
+        </TabsContent>
+
+        {/* Crypto USDT Tab */}
+        <TabsContent value="crypto" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <svg className="h-5 w-5" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+                  <path fill="#fff" d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117"/>
+                </svg>
+                Thanh toán USDT (Crypto)
+              </CardTitle>
+              <CardDescription>Cấu hình cổng thanh toán FPayment USDT qua mạng TRC20</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <Label className="font-medium">Bật thanh toán USDT</Label>
+                  <p className="text-xs text-muted-foreground">Cho phép người dùng thanh toán bằng tiền điện tử USDT</p>
+                </div>
+                <div 
+                  className={`w-14 h-7 rounded-full cursor-pointer transition-colors ${fpaymentConfig.fpayment_enabled ? 'bg-[#26A17B]' : 'bg-gray-600'}`}
+                  onClick={() => setFpaymentConfig({ ...fpaymentConfig, fpayment_enabled: !fpaymentConfig.fpayment_enabled })}
+                >
+                  <div 
+                    className={`w-5 h-5 mt-1 rounded-full bg-white shadow-md transition-transform ${fpaymentConfig.fpayment_enabled ? 'translate-x-8' : 'translate-x-1'}`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fpayment_api_key">API Key</Label>
+                  <Input
+                    id="fpayment_api_key"
+                    type="password"
+                    value={fpaymentConfig.fpayment_api_key}
+                    onChange={(e) => setFpaymentConfig({ ...fpaymentConfig, fpayment_api_key: e.target.value })}
+                    placeholder="Nhập FPayment API Key"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fpayment_merchant_id">Merchant ID</Label>
+                  <Input
+                    id="fpayment_merchant_id"
+                    value={fpaymentConfig.fpayment_merchant_id}
+                    onChange={(e) => setFpaymentConfig({ ...fpaymentConfig, fpayment_merchant_id: e.target.value })}
+                    placeholder="Nhập FPayment Merchant ID"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted rounded-lg text-sm space-y-2">
+                <p className="font-medium">Webhook URL (cấu hình trong FPayment):</p>
+                <code className="text-xs break-all block">
+                  {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fpayment-usdt?action=webhook`}
+                </code>
+                <p className="text-muted-foreground text-xs">
+                  Đăng ký tài khoản tại <a href="https://app.fpayment.net" target="_blank" rel="noopener noreferrer" className="text-primary underline">app.fpayment.net</a> để lấy API Key và Merchant ID.
+                </p>
+              </div>
+
+              <Button 
+                onClick={handleSaveFpaymentConfig} 
+                disabled={updateSettings.isPending}
+                className="w-full sm:w-auto bg-[#26A17B] hover:bg-[#1e8f6b]"
+              >
+                {updateSettings.isPending ? 'Đang lưu...' : 'Lưu cấu hình USDT'}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Refund History Tab */}
