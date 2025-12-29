@@ -6,14 +6,13 @@ Hướng dẫn đầy đủ từ A-Z để cài đặt và triển khai hệ th�
 
 1. [Yêu Cầu Hệ Thống](#yêu-cầu-hệ-thống)
 2. [Cài Đặt Môi Trường Local](#cài-đặt-môi-trường-local)
-3. [Cấu Hình Supabase](#cấu-hình-supabase)
-4. [Cài Đặt Database](#cài-đặt-database)
-5. [Cấu Hình Edge Functions](#cấu-hình-edge-functions)
-6. [Triển Khai Lên VPS](#triển-khai-lên-vps)
-7. [Cấu Hình Nginx](#cấu-hình-nginx)
-8. [SSL Certificate](#ssl-certificate)
-9. [Cấu Hình Domain](#cấu-hình-domain)
-10. [Troubleshooting](#troubleshooting)
+3. [Cấu Hình MySQL Database](#cấu-hình-mysql-database)
+4. [Cấu Hình Backend Server](#cấu-hình-backend-server)
+5. [Triển Khai Lên VPS](#triển-khai-lên-vps)
+6. [Cấu Hình Nginx](#cấu-hình-nginx)
+7. [SSL Certificate](#ssl-certificate)
+8. [Cấu Hình Domain](#cấu-hình-domain)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -28,16 +27,16 @@ Hướng dẫn đầy đủ từ A-Z để cài đặt và triển khai hệ th�
 ### Phần Mềm
 - **OS**: Ubuntu 22.04 LTS (khuyến nghị)
 - **Node.js**: v18.x hoặc v20.x
-- **Bun**: v1.0+ (tùy chọn, nhanh hơn npm)
+- **MySQL**: 8.0+
 - **Nginx**: v1.18+
 - **Git**: v2.x
+- **PM2**: Process Manager (cho production)
 
 ### Tài Khoản Cần Có
-- [Supabase](https://supabase.com) - Database & Auth
 - [PayOS](https://payos.vn) - Thanh toán VND
 - [PayPal Developer](https://developer.paypal.com) - Thanh toán USD
 - [FPayment](https://app.fpayment.net) - Thanh toán USDT (tùy chọn)
-- [Resend](https://resend.com) hoặc SMTP Server - Gửi email
+- Gmail hoặc SMTP Server - Gửi email
 
 ---
 
@@ -73,200 +72,219 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
-### 4. Cài Đặt Bun (Tùy Chọn - Nhanh Hơn npm)
+### 4. Cài Đặt MySQL
 
+#### Windows
+1. Tải MySQL Installer từ [MySQL Downloads](https://dev.mysql.com/downloads/installer/)
+2. Chạy installer và chọn **MySQL Server**
+3. Đặt mật khẩu cho root user
+
+#### Ubuntu/Linux
 ```bash
-# Windows (PowerShell)
-powershell -c "irm bun.sh/install.ps1 | iex"
+sudo apt update
+sudo apt install mysql-server -y
+sudo systemctl start mysql
+sudo mysql_secure_installation
+```
 
-# Linux/macOS
-curl -fsSL https://bun.sh/install | bash
+#### Docker (Khuyến nghị cho development)
+```bash
+docker run --name mysql-primeshop \
+  -e MYSQL_ROOT_PASSWORD=your_root_password \
+  -e MYSQL_DATABASE=prime_db \
+  -p 3306:3306 \
+  -v mysql_data:/var/lib/mysql \
+  -d mysql:8.0
 ```
 
 ### 5. Cài Đặt Dependencies
 
 ```bash
-# Sử dụng npm
+# Frontend
 npm install
 
-# Hoặc sử dụng bun (nhanh hơn)
-bun install
+# Backend
+cd server
+npm install
 ```
 
 ### 6. Tạo File Environment
 
-```bash
-# Copy file mẫu
-cp .env.example .env
-```
-
-Chỉnh sửa file `.env`:
-
+#### Frontend (.env tại root)
 ```env
-# Supabase
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-
-# App
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=http://localhost:3001
 VITE_APP_URL=http://localhost:5173
 ```
 
-### 7. Chạy Development Server
+#### Backend (server/.env)
+```env
+# Database
+DATABASE_URL="mysql://root:password@localhost:3306/prime_db"
 
-```bash
-# npm
-npm run dev
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-this
+JWT_REFRESH_SECRET=your-refresh-token-secret-change-this
 
-# hoặc bun
-bun dev
-```
+# Server
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 
-Truy cập http://localhost:5173
-
----
-
-## 🗄️ Cấu Hình Supabase
-
-### 1. Tạo Project Supabase
-
-1. Truy cập [Supabase Dashboard](https://supabase.com/dashboard)
-2. Click **New Project**
-3. Điền thông tin:
-   - **Name**: primeshop
-   - **Database Password**: (lưu lại mật khẩu này)
-   - **Region**: Southeast Asia (Singapore)
-4. Click **Create new project**
-5. Đợi 2-3 phút để project được tạo
-
-### 2. Lấy API Keys
-
-1. Vào **Settings** > **API**
-2. Copy các giá trị:
-   - **Project URL** → `VITE_SUPABASE_URL`
-   - **anon public** → `VITE_SUPABASE_ANON_KEY`
-   - **service_role** → Dùng cho Edge Functions
-
-### 3. Cấu Hình Authentication
-
-1. Vào **Authentication** > **Providers**
-2. Bật các provider cần thiết:
-   - **Email** (mặc định đã bật)
-   - **Google** (tùy chọn)
-   - **Discord** (tùy chọn)
-
-#### Cấu Hình Google OAuth:
-
-1. Truy cập [Google Cloud Console](https://console.cloud.google.com)
-2. Tạo project mới hoặc chọn project có sẵn
-3. Vào **APIs & Services** > **Credentials**
-4. Click **Create Credentials** > **OAuth client ID**
-5. Chọn **Web application**
-6. Thêm **Authorized redirect URIs**:
-   ```
-   https://your-project.supabase.co/auth/v1/callback
-   ```
-7. Copy **Client ID** và **Client Secret** vào Supabase
-
----
-
-## 🗃️ Cài Đặt Database
-
-### 1. Chạy Migrations
-
-Có 2 cách để chạy migrations:
-
-#### Cách 1: Qua Supabase Dashboard
-
-1. Vào **SQL Editor** trong Supabase Dashboard
-2. Mở từng file trong thư mục `database/migrations/`
-3. Copy nội dung và chạy theo thứ tự tên file
-
-#### Cách 2: Sử Dụng Supabase CLI
-
-```bash
-# Cài đặt Supabase CLI
-npm install -g supabase
-
-# Login
-supabase login
-
-# Link project
-supabase link --project-ref your-project-ref
-
-# Push migrations
-supabase db push
-```
-
-### 2. Chạy Seed Data (Tùy Chọn)
-
-```bash
-# Trong SQL Editor, chạy file seed.sql
-# database/seed.sql
-```
-
-### 3. Kiểm Tra Tables
-
-Sau khi chạy migrations, kiểm tra các tables đã được tạo:
-
-- `profiles` - Thông tin user
-- `products` - Sản phẩm
-- `orders` - Đơn hàng
-- `payments` - Thanh toán
-- `vouchers` - Mã giảm giá
-- `site_settings` - Cài đặt hệ thống
-- `mailboxes` - Hộp thư
-- `mail_messages` - Tin nhắn email
-- `crypto_payments` - Thanh toán crypto
-- ... và nhiều tables khác
-
----
-
-## ⚡ Cấu Hình Edge Functions
-
-### 1. Cài Đặt Deno (Cho Development)
-
-```bash
-# Windows
-irm https://deno.land/install.ps1 | iex
-
-# Linux/macOS
-curl -fsSL https://deno.land/install.sh | sh
-```
-
-### 2. Deploy Edge Functions
-
-```bash
-# Deploy tất cả functions
-supabase functions deploy
-
-# Hoặc deploy từng function
-supabase functions deploy send-email
-supabase functions deploy create-deposit-payment
-supabase functions deploy paypal-webhook
-supabase functions deploy fpayment-usdt
-# ... các functions khác
-```
-
-### 3. Cấu Hình Secrets
-
-```bash
-# PayOS
-supabase secrets set PAYOS_CLIENT_ID=your_client_id
-supabase secrets set PAYOS_API_KEY=your_api_key
-supabase secrets set PAYOS_CHECKSUM_KEY=your_checksum_key
-
-# PayPal
-supabase secrets set PAYPAL_CLIENT_ID=your_client_id
-supabase secrets set PAYPAL_CLIENT_SECRET=your_client_secret
+# Payments
+PAYOS_CLIENT_ID=your_client_id
+PAYOS_API_KEY=your_api_key
+PAYOS_CHECKSUM_KEY=your_checksum_key
 
 # Email (SMTP)
-supabase secrets set SMTP_HOST=smtp.gmail.com
-supabase secrets set SMTP_PORT=587
-supabase secrets set SMTP_USER=your@email.com
-supabase secrets set SMTP_PASS=your_app_password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@yourdomain.com
+```
 
-# Hoặc Resend
-supabase secrets set RESEND_API_KEY=your_resend_key
+### 7. Setup Database
+
+```bash
+cd server
+
+# Generate Prisma Client
+npx prisma generate
+
+# Push schema to database
+npx prisma db push
+
+# Seed initial data
+npx prisma db seed
+```
+
+### 8. Chạy Development Server
+
+```bash
+# Terminal 1 - Backend
+cd server
+npm run dev
+
+# Terminal 2 - Frontend
+npm run dev
+```
+
+Truy cập:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3001/api
+- Admin Panel: http://localhost:5173/admin
+
+---
+
+## 🗄️ Cấu Hình MySQL Database
+
+### 1. Tạo Database
+
+```sql
+CREATE DATABASE prime_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'prime_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+GRANT ALL PRIVILEGES ON prime_db.* TO 'prime_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 2. Cấu Hình Connection String
+
+```env
+DATABASE_URL="mysql://prime_user:your_secure_password@localhost:3306/prime_db"
+```
+
+### 3. Chạy Migrations
+
+```bash
+cd server
+
+# Generate Prisma Client
+npx prisma generate
+
+# Apply schema
+npx prisma db push
+
+# Hoặc tạo migrations
+npx prisma migrate dev --name init
+```
+
+### 4. Seed Data
+
+```bash
+cd server
+npx prisma db seed
+```
+
+Dữ liệu seed mặc định:
+- **Admin**: admin@example.com / admin123
+- **User**: user@example.com / user123
+
+### 5. Kiểm Tra Database
+
+```bash
+# Mở Prisma Studio
+npx prisma studio
+```
+
+Truy cập http://localhost:5555 để xem dữ liệu.
+
+---
+
+## ⚙️ Cấu Hình Backend Server
+
+### 1. Cấu Hình Payments
+
+#### PayOS (VND)
+```env
+PAYOS_CLIENT_ID=your_client_id
+PAYOS_API_KEY=your_api_key
+PAYOS_CHECKSUM_KEY=your_checksum_key
+```
+
+#### PayPal (USD)
+```env
+PAYPAL_CLIENT_ID=your_client_id
+PAYPAL_CLIENT_SECRET=your_client_secret
+PAYPAL_MODE=sandbox  # hoặc 'live' cho production
+```
+
+#### FPayment (USDT)
+```env
+FPAYMENT_MERCHANT_ID=your_merchant_id
+FPAYMENT_API_KEY=your_api_key
+```
+
+### 2. Cấu Hình Email (SMTP)
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@yourdomain.com
+```
+
+#### Lấy Gmail App Password:
+1. Bật 2FA cho Gmail
+2. Vào [App Passwords](https://myaccount.google.com/apppasswords)
+3. Tạo App Password cho "Mail"
+
+### 3. Cấu Hình OAuth (Tùy chọn)
+
+```env
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+```
+
+### 4. Cấu Hình Discord Notifications
+
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/xxx
 ```
 
 ---
@@ -289,9 +307,10 @@ sudo apt-get install -y nodejs
 # Cài đặt PM2 (Process Manager)
 sudo npm install -g pm2
 
-# Cài đặt Bun (tùy chọn)
-curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
+# Cài đặt MySQL
+sudo apt install mysql-server -y
+sudo systemctl start mysql
+sudo mysql_secure_installation
 ```
 
 ### 2. Clone & Build Project
@@ -300,99 +319,95 @@ source ~/.bashrc
 # Tạo thư mục web
 sudo mkdir -p /var/www/primeshop
 sudo chown -R $USER:$USER /var/www/primeshop
+cd /var/www/primeshop
 
 # Clone repository
-cd /var/www/primeshop
 git clone https://github.com/your-username/primeshop.git .
 
 # Cài đặt dependencies
 npm install
-# hoặc: bun install
+cd server && npm install && cd ..
 
-# Tạo file .env
-nano .env
-```
-
-Nội dung file `.env` cho production:
-
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_APP_URL=https://your-domain.com
-```
-
-### 3. Build Production
-
-```bash
-# Build
+# Build frontend
 npm run build
-# hoặc: bun run build
 
-# Kiểm tra thư mục dist đã được tạo
-ls -la dist/
+# Build backend
+cd server && npm run build
 ```
 
-### 4. Cấu Hình PM2 (Cho SSR/Backend)
-
-Nếu có backend server:
+### 3. Cấu Hình Environment
 
 ```bash
-# Tạo ecosystem file
-nano ecosystem.config.js
+# Frontend
+nano .env
+# Thêm các biến môi trường production
+
+# Backend
+nano server/.env
+# Thêm các biến môi trường production
 ```
 
-```javascript
+### 4. Setup Database Production
+
+```bash
+cd server
+npx prisma generate
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+### 5. Khởi Động Backend với PM2
+
+```bash
+cd /var/www/primeshop/server
+
+# Tạo ecosystem file
+cat > ecosystem.config.js << 'EOF'
 module.exports = {
   apps: [{
-    name: 'primeshop-server',
-    script: 'server/dist/index.js',
+    name: 'primeshop-api',
+    script: 'dist/index.js',
     instances: 'max',
     exec_mode: 'cluster',
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3001
+    },
+    env_production: {
+      NODE_ENV: 'production'
     }
   }]
 };
-```
+EOF
 
-```bash
-# Khởi động với PM2
-pm2 start ecosystem.config.js
+# Khởi động
+pm2 start ecosystem.config.js --env production
 
-# Lưu cấu hình để tự động khởi động khi reboot
+# Lưu PM2 config
 pm2 save
+
+# Auto-start khi reboot
 pm2 startup
 ```
 
 ---
 
-## 🌐 Cấu Hình Nginx
+## 🔧 Cấu Hình Nginx
 
-### 1. Tạo Nginx Config
+### 1. Tạo Config File
 
 ```bash
 sudo nano /etc/nginx/sites-available/primeshop
 ```
 
+Nội dung:
+
 ```nginx
+# Frontend
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    server_name yourdomain.com www.yourdomain.com;
 
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com www.your-domain.com;
-
-    # SSL certificates (sẽ được certbot tự động thêm)
-    # ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-
-    # Document root
     root /var/www/primeshop/dist;
     index index.html;
 
@@ -400,55 +415,49 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-
-    # Cache static assets
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    # Static files caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 
-    # SPA routing - tất cả routes đều trỏ về index.html
+    # SPA routing
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # API proxy (nếu có backend server)
-    # location /api/ {
-    #     proxy_pass http://localhost:3000;
-    #     proxy_http_version 1.1;
-    #     proxy_set_header Upgrade $http_upgrade;
-    #     proxy_set_header Connection 'upgrade';
-    #     proxy_set_header Host $host;
-    #     proxy_cache_bypass $http_upgrade;
-    # }
+    # API proxy
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
 
-    # Logging
-    access_log /var/log/nginx/primeshop.access.log;
-    error_log /var/log/nginx/primeshop.error.log;
+    # WebSocket proxy
+    location /socket.io {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
 }
 ```
 
 ### 2. Enable Site
 
 ```bash
-# Tạo symlink
 sudo ln -s /etc/nginx/sites-available/primeshop /etc/nginx/sites-enabled/
-
-# Xóa default site (tùy chọn)
-sudo rm /etc/nginx/sites-enabled/default
-
-# Test config
 sudo nginx -t
-
-# Reload nginx
 sudo systemctl reload nginx
 ```
 
@@ -456,33 +465,30 @@ sudo systemctl reload nginx
 
 ## 🔒 SSL Certificate
 
-### 1. Cài Đặt Let's Encrypt SSL
+### 1. Cài Đặt Certbot
 
 ```bash
-# Cài đặt certbot
 sudo apt install certbot python3-certbot-nginx -y
-
-# Lấy certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
-
-# Nhập email và đồng ý terms
-# Chọn redirect HTTP to HTTPS
 ```
 
-### 2. Tự Động Renew
+### 2. Lấy SSL Certificate
 
 ```bash
-# Test dry run
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+```
+
+### 3. Auto-Renewal
+
+```bash
+# Test renewal
 sudo certbot renew --dry-run
 
 # Certbot tự động thêm cron job để renew
-# Kiểm tra:
-sudo systemctl status certbot.timer
 ```
 
 ---
 
-## 🌍 Cấu Hình Domain
+## 🌐 Cấu Hình Domain
 
 ### 1. DNS Records
 
@@ -490,227 +496,192 @@ Thêm các DNS records tại nhà cung cấp domain:
 
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
-| A | @ | VPS_IP_ADDRESS | 3600 |
-| A | www | VPS_IP_ADDRESS | 3600 |
-| CNAME | * | your-domain.com | 3600 |
+| A | @ | Your_VPS_IP | 300 |
+| A | www | Your_VPS_IP | 300 |
+| A | api | Your_VPS_IP | 300 |
 
-### 2. Webhook URLs
+### 2. Cập Nhật Environment
 
-Cập nhật webhook URLs trong các cổng thanh toán:
+```env
+# Frontend (.env)
+VITE_API_URL=https://yourdomain.com/api
+VITE_WS_URL=https://yourdomain.com
+VITE_APP_URL=https://yourdomain.com
 
-#### PayOS:
-```
-https://your-project.supabase.co/functions/v1/create-deposit-payment
-```
-
-#### PayPal:
-```
-https://your-project.supabase.co/functions/v1/paypal-webhook
-```
-
-#### FPayment:
-```
-https://your-project.supabase.co/functions/v1/fpayment-usdt?action=webhook
+# Backend (server/.env)
+FRONTEND_URL=https://yourdomain.com
 ```
 
 ---
 
-## 🐳 Triển Khai Với Docker (Tùy Chọn)
+## 🔄 CI/CD với GitHub Actions
 
-### 1. Build Docker Image
+Tạo file `.github/workflows/deploy.yml`:
 
-```bash
-# Build image
-docker build -t primeshop .
+```yaml
+name: Deploy to VPS
 
-# Hoặc sử dụng docker-compose
-docker-compose up -d
-```
+on:
+  push:
+    branches: [main]
 
-### 2. Docker Compose
-
-File `docker-compose.yml` đã có sẵn trong project:
-
-```bash
-# Khởi động tất cả services
-docker-compose up -d
-
-# Xem logs
-docker-compose logs -f
-
-# Dừng services
-docker-compose down
-```
-
----
-
-## 🔧 Cấu Hình Hệ Thống Sau Khi Deploy
-
-### 1. Truy Cập Setup Wizard
-
-Sau khi deploy, truy cập:
-```
-https://your-domain.com/setup
-```
-
-### 2. Cấu Hình Trong Setup Wizard
-
-1. **Thông tin công ty** - Logo, tên, địa chỉ
-2. **Cổng thanh toán** - PayOS, PayPal keys
-3. **Email** - SMTP settings
-4. **Quản trị viên** - Tạo tài khoản admin đầu tiên
-
-### 3. Đăng Nhập Admin
-
-```
-https://your-domain.com/admin
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /var/www/primeshop
+            git pull origin main
+            npm install
+            npm run build
+            cd server
+            npm install
+            npm run build
+            npx prisma migrate deploy
+            pm2 restart all
 ```
 
 ---
 
-## 🛠️ Troubleshooting
+## 🐛 Troubleshooting
 
-### Lỗi Thường Gặp
+### Backend không khởi động
 
-#### 1. "Cannot connect to Supabase"
-```bash
-# Kiểm tra VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY
-# Đảm bảo không có dấu / ở cuối URL
-```
-
-#### 2. "CORS Error"
-```bash
-# Vào Supabase Dashboard > Settings > API
-# Thêm domain vào Additional Redirect URLs
-```
-
-#### 3. "Edge Function Error"
 ```bash
 # Kiểm tra logs
-supabase functions logs function-name
+pm2 logs primeshop-api
 
-# Kiểm tra secrets đã được set
-supabase secrets list
+# Kiểm tra port
+netstat -tlnp | grep 3001
+
+# Restart
+pm2 restart primeshop-api
 ```
 
-#### 4. "502 Bad Gateway"
+### Database connection error
+
 ```bash
-# Kiểm tra nginx config
-sudo nginx -t
+# Test MySQL connection
+mysql -u prime_user -p prime_db
+
+# Kiểm tra MySQL service
+sudo systemctl status mysql
+```
+
+### Nginx 502 Bad Gateway
+
+```bash
+# Kiểm tra backend đang chạy
+pm2 status
 
 # Kiểm tra nginx logs
 sudo tail -f /var/log/nginx/error.log
-
-# Kiểm tra PM2 status
-pm2 status
-pm2 logs
 ```
 
-#### 5. "SSL Certificate Error"
+### SSL Certificate issues
+
 ```bash
 # Renew certificate
 sudo certbot renew
 
-# Kiểm tra certificate
+# Check certificate
 sudo certbot certificates
 ```
 
-### Commands Hữu Ích
+### Permission denied
 
 ```bash
-# Restart nginx
-sudo systemctl restart nginx
-
-# Restart PM2
-pm2 restart all
-
-# Xem disk usage
-df -h
-
-# Xem memory
-free -m
-
-# Xem processes
-htop
-
-# Xem logs nginx
-sudo tail -100f /var/log/nginx/error.log
-
-# Kiểm tra ports đang mở
-sudo netstat -tlnp
+# Fix ownership
+sudo chown -R www-data:www-data /var/www/primeshop/dist
+sudo chmod -R 755 /var/www/primeshop/dist
 ```
 
 ---
 
-## 📱 Cấu Hình Mobile & PWA
+## 📊 Monitoring
 
-### 1. Update manifest.json
-
-Chỉnh sửa `public/manifest.json`:
-
-```json
-{
-  "name": "PrimeShop",
-  "short_name": "PrimeShop",
-  "start_url": "/",
-  "display": "standalone",
-  "theme_color": "#6366f1",
-  "background_color": "#0f0f23"
-}
-```
-
-### 2. Icons
-
-Thay thế các icons trong `public/`:
-- `favicon.ico`
-- `icon-192.png`
-- `icon-512.png`
-
----
-
-## 🔄 Cập Nhật & Bảo Trì
-
-### 1. Cập Nhật Code
+### PM2 Monitoring
 
 ```bash
-cd /var/www/primeshop
+# Status
+pm2 status
 
-# Pull code mới
-git pull origin main
+# Logs
+pm2 logs
 
-# Cài đặt dependencies mới (nếu có)
-npm install
-
-# Build lại
-npm run build
-
-# Restart services (nếu có backend)
-pm2 restart all
+# Metrics
+pm2 monit
 ```
 
-### 2. Backup Database
+### Nginx Status
 
 ```bash
-# Sử dụng Supabase Dashboard > Database > Backups
-# Hoặc sử dụng pg_dump nếu self-hosted
+# Test config
+sudo nginx -t
+
+# Logs
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
 ```
 
-### 3. Monitoring
+### MySQL Status
 
-Khuyến nghị sử dụng:
-- **Uptime Robot** - Monitor website uptime
-- **Sentry** - Error tracking
-- **Google Analytics** - Traffic analysis
+```bash
+# Status
+sudo systemctl status mysql
 
----
-
-## 📞 Hỗ Trợ
-
-Nếu gặp vấn đề, vui lòng:
-1. Kiểm tra [Issues](https://github.com/your-username/primeshop/issues)
-2. Tạo issue mới với đầy đủ thông tin
-3. Tham gia Discord/Telegram community
+# Process list
+mysql -u root -p -e "SHOW PROCESSLIST;"
+```
 
 ---
 
-**Happy Deploying! 🚀**
+## 🔐 Bảo Mật Production
+
+### 1. Firewall
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+```
+
+### 2. Fail2ban
+
+```bash
+sudo apt install fail2ban -y
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+```
+
+### 3. MySQL Security
+
+```bash
+sudo mysql_secure_installation
+```
+
+### 4. Environment Variables
+
+- KHÔNG commit file `.env` lên Git
+- Sử dụng secrets management cho CI/CD
+- Rotate JWT secrets định kỳ
+
+---
+
+## 📚 Tài Liệu Liên Quan
+
+- [README.md](../README.md) - Tổng quan dự án
+- [MYSQL_SETUP.md](MYSQL_SETUP.md) - Hướng dẫn MySQL chi tiết
+- [ENV_VARIABLES.md](ENV_VARIABLES.md) - Mô tả biến môi trường
+- [DOCKER.md](../DOCKER.md) - Triển khai với Docker
+- [QUICK_START.md](../QUICK_START.md) - Hướng dẫn nhanh
+
+---
+
+**Nếu gặp vấn đề, vui lòng tạo Issue trên GitHub repository.**

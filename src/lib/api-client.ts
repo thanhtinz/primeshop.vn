@@ -203,9 +203,15 @@ export const auth = {
 
 type FilterOperator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in' | 'is';
 
+interface SelectOptions {
+  count?: 'exact' | 'planned' | 'estimated';
+  head?: boolean;
+}
+
 interface QueryBuilder<T> {
-  select(columns?: string): QueryBuilder<T>;
+  select(columns?: string, options?: SelectOptions): QueryBuilder<T>;
   insert(data: Partial<T> | Partial<T>[]): QueryBuilder<T>;
+  upsert(data: Partial<T> | Partial<T>[], options?: { onConflict?: string }): QueryBuilder<T>;
   update(data: Partial<T>): QueryBuilder<T>;
   delete(): QueryBuilder<T>;
   eq(column: string, value: any): QueryBuilder<T>;
@@ -224,14 +230,17 @@ interface QueryBuilder<T> {
   range(from: number, to: number): QueryBuilder<T>;
   single(): QueryBuilder<T>;
   maybeSingle(): QueryBuilder<T>;
-  then<TResult>(onfulfilled?: (value: { data: T | T[] | null; error: any }) => TResult): Promise<TResult>;
+  then<TResult>(onfulfilled?: (value: { data: T | T[] | null; error: any; count?: number | null }) => TResult): Promise<TResult>;
 }
 
 class QueryBuilderImpl<T> implements QueryBuilder<T> {
   private table: string;
-  private operation: 'select' | 'insert' | 'update' | 'delete' = 'select';
+  private operation: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select';
   private selectColumns?: string;
+  private selectOptions?: SelectOptions;
   private insertData?: any;
+  private upsertData?: any;
+  private upsertOnConflict?: string;
   private updateData?: any;
   private filters: Array<{ column: string; operator: FilterOperator; value: any }> = [];
   private orFilters?: string;
@@ -247,15 +256,23 @@ class QueryBuilderImpl<T> implements QueryBuilder<T> {
     this.table = table;
   }
 
-  select(columns?: string): QueryBuilder<T> {
+  select(columns?: string, options?: SelectOptions): QueryBuilder<T> {
     this.operation = 'select';
     this.selectColumns = columns;
+    this.selectOptions = options;
     return this;
   }
 
   insert(data: Partial<T> | Partial<T>[]): QueryBuilder<T> {
     this.operation = 'insert';
     this.insertData = data;
+    return this;
+  }
+
+  upsert(data: Partial<T> | Partial<T>[], options?: { onConflict?: string }): QueryBuilder<T> {
+    this.operation = 'upsert';
+    this.upsertData = data;
+    this.upsertOnConflict = options?.onConflict;
     return this;
   }
 
@@ -355,17 +372,17 @@ class QueryBuilderImpl<T> implements QueryBuilder<T> {
   }
 
   async then<TResult>(
-    onfulfilled?: (value: { data: T | T[] | null; error: any; count?: number }) => TResult
+    onfulfilled?: (value: { data: T | T[] | null; error: any; count?: number | null }) => TResult
   ): Promise<TResult> {
     try {
       const result = await this.execute();
       return onfulfilled ? onfulfilled(result) : (result as any);
     } catch (error: any) {
-      return onfulfilled ? onfulfilled({ data: null, error }) : ({ data: null, error } as any);
+      return onfulfilled ? onfulfilled({ data: null, error, count: null }) : ({ data: null, error, count: null } as any);
     }
   }
 
-  private async execute(): Promise<{ data: T | T[] | null; error: any; count?: number }> {
+  private async execute(): Promise<{ data: T | T[] | null; error: any; count?: number | null }> {
     const endpoint = `/db/${this.table}`;
     
     const params: Record<string, any> = {};
@@ -380,6 +397,14 @@ class QueryBuilderImpl<T> implements QueryBuilder<T> {
     if (this.orderColumn) params.order = `${this.orderColumn}.${this.orderAscending ? 'asc' : 'desc'}`;
     if (this.limitCount) params.limit = this.limitCount;
     if (this.rangeFrom !== undefined) params.offset = this.rangeFrom;
+    
+    // Handle count option
+    if (this.selectOptions?.count) {
+      params.count = this.selectOptions.count;
+    }
+    if (this.selectOptions?.head) {
+      params.head = 'true';
+    }
 
     let method: RequestMethod = 'GET';
     let body: any = undefined;
@@ -388,6 +413,13 @@ class QueryBuilderImpl<T> implements QueryBuilder<T> {
       case 'insert':
         method = 'POST';
         body = this.insertData;
+        break;
+      case 'upsert':
+        method = 'PUT';
+        body = this.upsertData;
+        if (this.upsertOnConflict) {
+          params.onConflict = this.upsertOnConflict;
+        }
         break;
       case 'update':
         method = 'PATCH';
@@ -398,27 +430,44 @@ class QueryBuilderImpl<T> implements QueryBuilder<T> {
         break;
     }
 
-    const data = await apiFetch<any>(endpoint, { method, body, params });
+    const response = await apiFetch<any>(endpoint, { method, body, params });
+    
+    // Handle head-only requests (count only, no data)
+    if (this.selectOptions?.head) {
+      const count = typeof response === 'object' && 'count' in response ? response.count : (Array.isArray(response) ? response.length : 0);
+      return { data: null, error: null, count };
+    }
+    
+    // Handle response with count
+    let data = response;
+    let count: number | null = null;
+    
+    if (typeof response === 'object' && 'data' in response && 'count' in response) {
+      data = response.data;
+      count = response.count;
+    } else if (Array.isArray(response)) {
+      count = response.length;
+    }
     
     // Handle single/maybeSingle
     if (this.returnSingle) {
       if (Array.isArray(data)) {
         if (data.length === 0) {
-          return { data: null, error: { message: 'No rows found', code: 'PGRST116' } };
+          return { data: null, error: { message: 'No rows found', code: 'PGRST116' }, count };
         }
-        return { data: data[0], error: null };
+        return { data: data[0], error: null, count };
       }
-      return { data, error: null };
+      return { data, error: null, count };
     }
     
     if (this.returnMaybeSingle) {
       if (Array.isArray(data)) {
-        return { data: data[0] || null, error: null };
+        return { data: data[0] || null, error: null, count };
       }
-      return { data, error: null };
+      return { data, error: null, count };
     }
 
-    return { data, error: null };
+    return { data, error: null, count };
   }
 }
 

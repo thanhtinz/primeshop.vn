@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +9,45 @@ const corsHeaders = {
 
 interface InvoiceRequest {
   orderNumber: string;
+}
+
+// Send email via SMTP
+async function sendViaSMTP(
+  from: string,
+  fromName: string,
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  smtpConfig: Record<string, string>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpConfig.smtp_host,
+        port: Number(smtpConfig.smtp_port) || 587,
+        tls: smtpConfig.smtp_secure === 'true',
+        auth: {
+          username: smtpConfig.smtp_user,
+          password: smtpConfig.smtp_pass,
+        },
+      },
+    });
+
+    await client.send({
+      from: { address: from, name: fromName },
+      to: [{ address: to }],
+      subject,
+      content: text,
+      html,
+    });
+
+    await client.close();
+    return { success: true };
+  } catch (error) {
+    console.error('[send-invoice] SMTP error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'SMTP error' };
+  }
 }
 
 const formatPrice = (price: number) => {
@@ -230,49 +268,49 @@ const handler = async (req: Request): Promise<Response> => {
       .from("site_settings")
       .select("key, value");
 
-    const siteSettings: Record<string, any> = {};
-    settingsData?.forEach((item: any) => {
+    const siteSettings: Record<string, string> = {};
+    settingsData?.forEach((item: { key: string; value: string }) => {
       siteSettings[item.key] = item.value;
     });
+
+    // Check SMTP configuration
+    if (!siteSettings.smtp_host || !siteSettings.smtp_user || !siteSettings.smtp_pass) {
+      throw new Error("SMTP configuration is not complete");
+    }
 
     // Generate HTML
     const html = generateInvoiceHTML(order, siteSettings);
 
     // Get sender email
-    const fromEmail = siteSettings.smtp_from || "onboarding@resend.dev";
+    const fromEmail = siteSettings.smtp_from || siteSettings.smtp_user;
     const siteName = siteSettings.site_name || "Shop";
 
-    // Send email via Resend API
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: `${siteName} <${fromEmail}>`,
-        to: [order.customer_email],
-        subject: `Hóa đơn đơn hàng #${order.order_number}`,
-        html,
-      }),
-    });
+    // Send email via SMTP
+    const result = await sendViaSMTP(
+      fromEmail,
+      siteName,
+      order.customer_email,
+      `Hóa đơn đơn hàng #${order.order_number}`,
+      html,
+      `Hóa đơn đơn hàng #${order.order_number} - Tổng: ${formatPrice(order.total_amount)}`,
+      siteSettings
+    );
 
-    const emailResult = await emailResponse.json();
-
-    if (!emailResponse.ok) {
-      throw new Error(emailResult.message || "Failed to send email");
+    if (!result.success) {
+      throw new Error(result.error || "Failed to send email");
     }
 
-    console.log("Invoice email sent:", emailResult);
+    console.log("[send-invoice] Invoice email sent via SMTP");
 
-    return new Response(JSON.stringify({ success: true, data: emailResult }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
-  } catch (error: any) {
-    console.error("Error in send-invoice function:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[send-invoice] Error:", errorMessage);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: errorMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

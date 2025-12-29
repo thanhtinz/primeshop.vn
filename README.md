@@ -23,7 +23,7 @@
 
 ---
 
-## � Table of Contents
+## 📋 Table of Contents
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
@@ -45,7 +45,7 @@
 
 - 🎮 **Game Accounts Trading** - Buy/sell accounts with secure login info or codestring delivery
 - 💎 **Automated Top-up Services** - Integrated with game recharge APIs (Naperis, etc.)
-- 🎨 **Design Marketplace** - Connect freelance designers with clients (uses same infrastructure as game accounts)
+- 🎨 **Design Marketplace** - Connect freelance designers with clients
 - 📱 **SMM Panel** - Social media marketing services integration
 - 🏪 **Multi-vendor Marketplace** - Allow users to create and manage their own shops
 
@@ -53,8 +53,8 @@
 
 ✅ **Production-Ready** - Battle-tested codebase with 240k+ lines  
 ✅ **Feature-Rich** - 100+ custom React hooks, comprehensive admin panel  
-✅ **Scalable Architecture** - Clean separation of concerns, RESTful APIs  
-✅ **Modern Stack** - React 18, TypeScript, Prisma ORM, MySQL  
+✅ **Scalable Architecture** - Express + MySQL + Prisma ORM  
+✅ **Modern Stack** - React 18, TypeScript, Vite, TailwindCSS  
 ✅ **Secure** - JWT authentication, OAuth integration, encrypted payments  
 ✅ **Extensible** - Modular design, easy to customize and extend
 
@@ -140,334 +140,164 @@
 <details>
 <summary><b>🎨 Design Services</b></summary>
 
-> Uses the same core marketplace infrastructure as game accounts with specialized features for designer workflows
-
 - **Service Listings** - Portfolio showcase for designers
 - **Order Management** - Milestone tracking, revision limits
-- **File Delivery** - Secure file upload/download (similar to account delivery)
+- **File Delivery** - Secure file upload/download
 - **NDA Support** - Non-disclosure agreements for sensitive projects
 - **Team Collaboration** - Multi-designer projects
 - **License Types** - Personal, commercial licensing options
-- **Review System** - Multi-criteria ratings (quality, communication, delivery time)
-- **Activity Logs** - Complete order timeline and version history
-- **Auto/Manual Delivery** - Flexible delivery methods like other products
-- **Wallet Integration** - Designer wallet with commission tracking
-
-**Note**: Design services leverage the same seller dashboard, inventory management, and payment systems as game accounts, with additional specialized features for creative workflows.
 
 </details>
 
 <details>
-<summary><b>🌐 Additional Modules</b></summary>
+<summary><b>📊 Admin Panel</b></summary>
 
-- **SMM Panel** - Social media marketing services
-- **News System** - Blog/news articles with categories
-- **Group System** - Community groups with wallet, tasks, deals
-- **Event System** - Time-limited promotional events
-- **Utilities** - QR generator, domain checker, video downloader, etc.
-- **API Access** - Public API for integrations
-- **Admin Panel** - Complete backend management
-
-</details>
-
-<details>
-<summary><b>⚡ Performance & Security</b></summary>
-
-- **API Rate Limiting** - 8 configured rate limiters for different endpoints:
-  - Auth: 5 requests/15min (strict)
-  - Payments: 20 requests/hour
-  - File uploads: 50 uploads/hour
-  - Email: 10 emails/hour
-  - Standard API: 100 requests/15min
-  - Admin bypass for rate limits
-- **WebSocket Real-time** - Socket.IO for live chat, notifications
-- **Docker Ready** - Full containerization with docker-compose
-- **Testing Suite** - Vitest with test examples
-- **Security Headers** - Helmet.js protection
-- **CORS Protection** - Configurable origin whitelist
+- **Dashboard** - Real-time statistics, revenue charts
+- **User Management** - CRUD operations, role assignment, ban/unban
+- **Product Management** - Approve/reject listings, bulk operations
+- **Order Management** - Status updates, refund processing
+- **Financial Reports** - Revenue, commissions, payouts
+- **Content Management** - Pages, banners, announcements
+- **Settings** - Site configuration, payment gateways, email templates
+- **Logs & Audit** - Activity tracking, security logs
 
 </details>
 
 ---
 
-## 🛠 Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
-
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **React** | 18.3.1 | UI library with hooks |
-| **TypeScript** | 5.6 | Type safety and better DX |
-| **Vite** | 6.0 | Fast build tool & HMR |
-| **TailwindCSS** | 3.4 | Utility-first CSS framework |
-| **Shadcn/UI** | Latest | Accessible component library |
-| **TanStack Query** | 5.x | Server state management |
-| **React Router** | 6.x | Client-side routing |
-| **React Hook Form** | 7.x | Performant form handling |
-| **Zod** | 3.x | Schema validation |
-| **Framer Motion** | 11.x | Animation library |
-| **Recharts** | 2.x | Chart visualization |
+| React | 18.3.1 | UI Framework |
+| TypeScript | 5.6 | Type Safety |
+| Vite | 6.0 | Build Tool |
+| TailwindCSS | 3.4 | Styling |
+| Shadcn/UI | Latest | UI Components |
+| TanStack Query | 5.x | Data Fetching |
+| React Router | 6.x | Routing |
+| Zustand | 4.x | State Management |
+| Socket.IO Client | 4.x | Realtime |
 
 ### Backend
-
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| **Node.js** | 18+ | JavaScript runtime |
-| **Express.js** | 4.21 | Web framework |
-| **Prisma** | 6.2 | Next-gen ORM |
-| **MySQL** | 8.0 | Relational database |
-| **Socket.IO** | 4.8 | WebSocket real-time communication |
-| **Discord.js** | 14.16 | Discord bot integration |
-| **JWT** | 9.x | Authentication tokens |
-| **Express Rate Limit** | 7.5 | API rate limiting & throttling |
-| **Nodemailer** | 6.x | SMTP email service |
-| **Bcrypt** | 5.x | Password hashing |
-| **Vitest** | 2.1 | Testing framework |
-| **Discord OAuth** | Social login & webhooks |
-| **Naperis API** | Game top-up provider |
-| **Cloudinary / R2** | Media storage (configurable) |
+| Express.js | 4.21 | Web Framework |
+| TypeScript | 5.x | Type Safety |
+| Prisma | 6.2 | ORM |
+| MySQL | 8.0 | Database |
+| Socket.IO | 4.x | WebSocket |
+| JWT | - | Authentication |
+| Nodemailer | 6.x | Email (SMTP) |
+| Multer | 1.x | File Upload |
 
-### DevOps & Tools
-
-- **Docker** - Containerization (Frontend + Backend + MySQL)
-- **Docker Compose** - Multi-container orchestration
-- **Git** - Version control
-- **Vitest** - Testing framework
-- **ESLint** - Code linting
-- **Prettier** - Code formatting
-- **Prisma Studio** - Database GUI
-- **VS Code** - Recommended IDE
+### DevOps
+| Technology | Purpose |
+|------------|---------|
+| Docker | Containerization |
+| Nginx | Reverse Proxy |
+| PM2 | Process Manager |
+| GitHub Actions | CI/CD |
 
 ---
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### Prerequisites
 
-**Fastest way to get started!** ✨
-
-```bash
-# Clone and setup
-git clone https://github.com/yourusername/prime-shop.git
-cd prime-shop
-cp .env.docker .env
-
-# Start everything
-docker-compose up -d
-
-# Access at http://localhost:3000
-```
-
-See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
-
-### Option 2: Local Development
-
-#### Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** 18+ ([Download](https://nodejs.org/))
-- **MySQL** 8.0+ ([Download](https://dev.mysql.com/downloads/))
-- **Git** ([Download](https://git-scm.com/))
-- **npm** or **yarn** (comes with Node.js)
+- Node.js 18+
+- MySQL 8.0+
+- Git
 
 ### Installation
 
-#### 1. Clone the Repository
-
 ```bash
+# 1. Clone repository
 git clone https://github.com/yourusername/prime-shop.git
 cd prime-shop
-```
 
-#### 2. Install Dependencies
-
-```bash
-# Install frontend dependencies
+# 2. Install dependencies
 npm install
+cd server && npm install && cd ..
 
-# Install backend dependencies
+# 3. Setup environment
+cp .env.example .env
+cp server/.env.example server/.env
+# Edit both .env files with your configuration
+
+# 4. Setup database
 cd server
-npm install
-cd ..
-```
-
-#### 3. Configure Environment Variables
-
-Create `.env` in the root directory:
-
-```env
-VITE_API_URL=http://localhost:3001/api
-```
-
-Create `server/.env`:
-
-```env
-# Server
-PORT=3001
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
-
-# Database
-DATABASE_URL="mysql://root:password@localhost:3306/prime_shop"
-
-# JWT
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-JWT_EXPIRES_IN=7d
-
-# OAuth (Optional - get from respective platforms)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-DISCORD_CLIENT_ID=
-DISCORD_CLIENT_SECRET=
-
-# Email SMTP
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-
-# Payment Gateways (Optional)
-PAYOS_CLIENT_ID=
-PAYOS_API_KEY=
-PAYOS_CHECKSUM_KEY=
-
-PAYPAL_CLIENT_ID=
-PAYPAL_CLIENT_SECRET=
-PAYPAL_MODE=sandbox
-
-# Game Topup API (Optional)
-NAPERIS_API_KEY=
-NAPERIS_API_SECRET=
-```
-
-#### 4. Setup Database
-
-```bash
-cd server
-
-# Generate Prisma Client
 npx prisma generate
-
-# Run database migrations
-npx prisma migrate deploy
-
-# (Optional) Seed sample data
+npx prisma db push
 npx prisma db seed
-
 cd ..
-```
 
-#### 5. Start Development Servers
+# 5. Start development servers
+# Terminal 1 - Backend
+cd server && npm run dev
 
-Open two terminal windows:
-
-**Terminal 1 - Backend:**
-```bash
-cd server
+# Terminal 2 - Frontend
 npm run dev
 ```
 
-**Terminal 2 - Frontend:**
-```bash
-npm run dev
-```
+### Access Points
 
-#### 6. Access the Application
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:3001/api |
+| Admin Panel | http://localhost:5173/admin |
+| Prisma Studio | http://localhost:5555 |
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3001/api
-- **Admin Panel**: http://localhost:5173/admin
+### Default Credentials
 
-### Default Credentials (after seeding)
-
-- **Admin**: admin@example.com / admin123
-- **User**: user@example.com / user123
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@example.com | admin123 |
+| User | user@example.com | user123 |
 
 ---
 
 ## ⚙️ Configuration
 
-### Environment Variables Reference
+### Frontend Environment (.env)
 
-<details>
-<summary><b>Frontend Variables</b></summary>
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=http://localhost:3001
+VITE_APP_URL=http://localhost:5173
+```
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API base URL | `http://localhost:3001/api` |
+### Backend Environment (server/.env)
 
-</details>
+```env
+# Database
+DATABASE_URL="mysql://root:password@localhost:3306/prime_db"
 
-<details>
-<summary><b>Backend Variables</b></summary>
+# JWT
+JWT_SECRET=your-secret-key-min-32-characters
+JWT_REFRESH_SECRET=your-refresh-secret-min-32-characters
 
-#### Server Configuration
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `PORT` | Server port | `3001` | Yes |
-| `NODE_ENV` | Environment mode | `development` | Yes |
-| `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:5173` | Yes |
+# Server
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 
-#### Database
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | MySQL connection string | Yes |
+# Payments
+PAYOS_CLIENT_ID=
+PAYOS_API_KEY=
+PAYOS_CHECKSUM_KEY=
 
-#### Authentication
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `JWT_SECRET` | Secret key for JWT tokens | Yes |
-| `JWT_EXPIRES_IN` | Token expiration time | No (default: 7d) |
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@yourdomain.com
+```
 
-#### OAuth Providers
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | No |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth secret | No |
-| `DISCORD_CLIENT_ID` | Discord OAuth client ID | No |
-| `DISCORD_CLIENT_SECRET` | Discord OAuth secret | No |
-
-#### Email (SMTP)
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `SMTP_HOST` | SMTP server host | No |
-| `SMTP_PORT` | SMTP server port | No |
-| `SMTP_USER` | SMTP username | No |
-| `SMTP_PASS` | SMTP password | No |
-| `SMTP_FROM_NAME` | Sender name | No |
-| `SMTP_FROM_EMAIL` | Sender email | No |
-
-#### Payment Gateways
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PAYOS_CLIENT_ID` | PayOS client ID (VND) | No |
-| `PAYOS_API_KEY` | PayOS API key | No |
-| `PAYOS_CHECKSUM_KEY` | PayOS checksum key | No |
-| `PAYPAL_CLIENT_ID` | PayPal client ID (USD) | No |
-| `PAYPAL_CLIENT_SECRET` | PayPal secret | No |
-| `PAYPAL_MODE` | `sandbox` or `live` | No |
-
-#### External APIs
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NAPERIS_API_KEY` | Naperis API key (topup) | No |
-| `NAPERIS_API_SECRET` | Naperis API secret | No |
-| `OPENAI_API_KEY` | OpenAI API key (AI features) | No |
-| `ANTHROPIC_API_KEY` | Anthropic API key | No |
-
-</details>
-
-### Admin Panel Configuration
-
-Many configurations can be managed directly through the admin panel:
-
-- **API Keys** - `/admin/settings/secrets`
-- **Site Settings** - `/admin/settings`
-- **Email Templates** - `/admin/email`
-- **Translations** - `/admin/translations`
-- **Payment Gateways** - Configure in settings
+📖 See [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md) for complete documentation.
 
 ---
 
@@ -475,729 +305,198 @@ Many configurations can be managed directly through the admin panel:
 
 ```
 prime-shop/
-│
-├── 📂 src/                          # Frontend source code
-│   ├── 📂 components/               # React components
-│   │   ├── admin/                  # Admin panel components
-│   │   ├── cart/                   # Shopping cart
-│   │   ├── checkout/               # Checkout process
-│   │   ├── home/                   # Homepage sections
-│   │   ├── layout/                 # Layout components
-│   │   ├── marketplace/            # Marketplace features
-│   │   ├── product/                # Product displays
-│   │   ├── social/                 # Social features
-│   │   ├── ui/                     # Reusable UI components (Shadcn)
-│   │   └── ...                     # Other feature components
-│   │
-│   ├── 📂 contexts/                 # React Context providers
-│   │   ├── AuthContext.tsx         # Authentication state
-│   │   ├── CartContext.tsx         # Shopping cart state
-│   │   ├── CurrencyContext.tsx     # Currency management
-│   │   └── LanguageContext.tsx     # i18n translations
-│   │
-│   ├── 📂 hooks/                    # Custom React hooks (100+)
-│   │   ├── useProducts.mysql.ts    # Product operations
-│   │   ├── useOrders.mysql.ts      # Order management
-│   │   ├── useWallet.mysql.ts      # Wallet operations
-│   │   ├── useAuth.mysql.ts        # Authentication
-│   │   └── ...                     # Feature-specific hooks
-│   │
-│   ├── 📂 pages/                    # Page components (routes)
-│   │   ├── Index.tsx               # Homepage
-│   │   ├── ProductsPage.tsx        # Product listing
-│   │   ├── ProductPage.tsx         # Product detail
-│   │   ├── CheckoutPage.tsx        # Checkout flow
-│   │   ├── 📂 admin/               # Admin pages
-│   │   │   ├── AdminDashboard.tsx  # Admin dashboard
-│   │   │   ├── AdminProducts.tsx   # Product management
-│   │   │   ├── AdminOrders.tsx     # Order management
-│   │   │   └── ...                 # Other admin pages
-│   │   ├── 📂 marketplace/         # Marketplace pages
-│   │   └── ...                     # Other pages
-│   │
-│   ├── 📂 lib/                      # Utility functions
-│   │   ├── utils.ts                # Helper functions
-│   │   ├── api-client.ts           # API client setup
+├── src/                          # Frontend
+│   ├── components/               # React components
+│   │   ├── ui/                   # Shadcn UI components
+│   │   ├── admin/                # Admin panel components
 │   │   └── ...
-│   │
-│   ├── 📂 types/                    # TypeScript type definitions
-│   ├── App.tsx                      # Root component
-│   ├── main.tsx                     # Entry point
-│   └── index.css                    # Global styles
+│   ├── contexts/                 # React contexts
+│   │   ├── AuthContext.tsx       # Authentication (MySQL)
+│   │   └── ...
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── useProducts.ts        # → useProducts.mysql.ts
+│   │   ├── useOrders.ts          # → useOrders.mysql.ts
+│   │   └── ...                   # All hooks use MySQL backend
+│   ├── lib/                      # Utilities
+│   │   ├── api-client.ts         # API client (replaces Supabase)
+│   │   └── utils.ts
+│   ├── pages/                    # Page components
+│   └── types/                    # TypeScript types
 │
-├── 📂 server/                       # Backend source code
-│   ├── 📂 src/
-│   │   ├── 📂 routes/              # Express route handlers
-│   │   │   ├── auth.ts             # Authentication routes
-│   │   │   ├── products.ts         # Product CRUD
-│   │   │   ├── orders.ts           # Order management
-│   │   │   ├── wallet.ts           # Wallet operations
-│   │   │   ├── email.ts            # Email service
-│   │   │   ├── oauth.ts            # OAuth handlers
-│   │   │   ├── payments.ts         # Payment processing
-│   │   │   └── ...                 # Other routes
-│   │   │
-│   │   ├── 📂 services/            # Business logic
-│   │   │   ├── emailService.ts     # Email operations
-│   │   │   └── oauthService.ts     # OAuth logic
-│   │   │
-│   │   ├── 📂 middleware/          # Express middleware
-│   │   │   ├── auth.ts             # JWT verification
-│   │   │   └── errorHandler.ts     # Error handling
-│   │   │
-│   │   └── index.ts                # Server entry point
-│   │
-│   └── 📂 prisma/
-│       ├── schema.prisma           # Database schema
-│       ├── migrations/             # Database migrations
-│       └── seed.ts                 # Seed data script
+├── server/                       # Backend
+│   ├── src/
+│   │   ├── index.ts              # Entry point
+│   │   ├── routes/               # API routes
+│   │   │   ├── auth.ts           # Authentication
+│   │   │   ├── products.ts       # Products CRUD
+│   │   │   ├── orders.ts         # Orders management
+│   │   │   └── ...
+│   │   ├── middleware/           # Express middleware
+│   │   │   ├── auth.ts           # JWT verification
+│   │   │   └── rateLimiter.ts
+│   │   ├── services/             # Business logic
+│   │   └── utils/                # Utilities
+│   └── prisma/
+│       ├── schema.prisma         # Database schema
+│       └── seed.ts               # Seed data
 │
-├── 📂 public/                       # Static assets
-│   ├── manifest.json               # PWA manifest
-│   └── robots.txt
+├── docs/                         # Documentation
+│   ├── DEPLOYMENT_GUIDE.md
+│   ├── ENV_VARIABLES.md
+│   └── MYSQL_SETUP.md
 │
-├── 📄 package.json                  # Frontend dependencies
-├── 📄 vite.config.ts               # Vite configuration
-├── 📄 tailwind.config.ts           # Tailwind CSS config
-├── 📄 tsconfig.json                # TypeScript config
-└── 📄 README.md                     # This file
+├── public/                       # Static assets
+├── docker-compose.yml
+└── package.json
 ```
-
-### Key Directories
-
-- **`src/components/`** - Reusable UI components organized by feature
-- **`src/hooks/`** - Custom React hooks for data fetching and state management
-- **`src/pages/`** - Top-level page components mapped to routes
-- **`server/src/routes/`** - RESTful API endpoints
-- **`server/prisma/`** - Database schema and migrations
 
 ---
 
-## 📖 API Documentation
-
-### Base URL
-
-```
-http://localhost:3001/api
-```
+## 📡 API Documentation
 
 ### Authentication
 
-Most endpoints require authentication via JWT token in the Authorization header:
-
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-### Core Endpoints
-
-<details>
-<summary><b>🔐 Authentication & Users</b></summary>
-
-#### Register
 ```http
 POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securepass123",
-  "fullName": "John Doe"
-}
-```
-
-#### Login
-```http
 POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securepass123"
-}
+POST /api/auth/logout
+POST /api/auth/refresh
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+GET  /api/auth/me
 ```
 
-#### Get Current User
+### Products
+
 ```http
-GET /api/auth/me
-Authorization: Bearer <token>
+GET    /api/products              # List products
+GET    /api/products/:id          # Get product
+POST   /api/products              # Create product (auth)
+PATCH  /api/products/:id          # Update product (auth)
+DELETE /api/products/:id          # Delete product (auth)
 ```
 
-#### OAuth
+### Orders
+
 ```http
-GET /api/oauth/google              # Get Google OAuth URL
-GET /api/oauth/discord             # Get Discord OAuth URL
-GET /api/oauth/google/callback     # Google callback handler
-GET /api/oauth/discord/callback    # Discord callback handler
-POST /api/oauth/link/google        # Link Google account
-POST /api/oauth/link/discord       # Link Discord account
-DELETE /api/oauth/unlink/:provider # Unlink OAuth account
+GET    /api/orders                # List user orders (auth)
+GET    /api/orders/:id            # Get order details (auth)
+POST   /api/orders                # Create order (auth)
+PATCH  /api/orders/:id/status     # Update status (admin)
 ```
 
-</details>
+### Users
 
-<details>
-<summary><b>📦 Products</b></summary>
-
-#### List Products
 ```http
-GET /api/products?category=<id>&sort=newest&limit=20&page=1
+GET    /api/users/profile         # Get profile (auth)
+PATCH  /api/users/profile         # Update profile (auth)
+GET    /api/users/:id             # Get public profile
 ```
 
-Query Parameters:
-- `category` - Filter by category ID
-- `sort` - Sort by: `newest`, `oldest`, `price_asc`, `price_desc`
-- `limit` - Items per page
-- `page` - Page number
-- `search` - Search term
+### Payments
 
-#### Get Product
 ```http
-GET /api/products/:id
+POST   /api/deposits              # Create deposit
+POST   /api/payments/payos/webhook
+POST   /api/payments/paypal/webhook
 ```
 
-#### Create Product (Admin/Seller)
-```http
-POST /api/products
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "name": "Product Name",
-  "description": "Product description",
-  "price": 99.99,
-  "categoryId": 1,
-  "type": "codestring",
-  "stock": 100
-}
-```
-
-#### Update Product
-```http
-PUT /api/products/:id
-Authorization: Bearer <token>
-```
-
-#### Delete Product
-```http
-DELETE /api/products/:id
-Authorization: Bearer <token>
-```
-
-</details>
-
-<details>
-<summary><b>🛍️ Orders</b></summary>
-
-#### Create Order
-```http
-POST /api/orders
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "items": [
-    { "productId": 1, "quantity": 2 }
-  ],
-  "voucherCode": "SAVE10"
-}
-```
-
-#### Get User Orders
-```http
-GET /api/orders
-Authorization: Bearer <token>
-```
-
-#### Get Order Details
-```http
-GET /api/orders/:id
-Authorization: Bearer <token>
-```
-
-#### Update Order Status (Admin/Seller)
-```http
-PUT /api/orders/:id/status
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "status": "completed"
-}
-```
-
-</details>
-
-<details>
-<summary><b>💰 Wallet & Payments</b></summary>
-
-#### Get Wallet Balance
-```http
-GET /api/wallet
-Authorization: Bearer <token>
-```
-
-#### Get Transactions
-```http
-GET /api/wallet/transactions?page=1&limit=20
-Authorization: Bearer <token>
-```
-
-#### Create Deposit Request
-```http
-POST /api/wallet/deposit
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "amount": 100000,
-  "gateway": "payos"
-}
-```
-
-#### Create Withdrawal Request
-```http
-POST /api/wallet/withdraw
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "amount": 50000,
-  "bankAccount": "123456789",
-  "bankName": "Vietcombank"
-}
-```
-
-</details>
-
-<details>
-<summary><b>📧 Email & Notifications</b></summary>
-
-#### Send Email
-```http
-POST /api/email/send
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "to": "recipient@example.com",
-  "template": "order_confirmation",
-  "data": {
-    "orderNumber": "ORD-001",
-    "total": 99.99
-  }
-}
-```
-
-#### Test SMTP Connection
-```http
-POST /api/email/test
-Authorization: Bearer <token>
-```
-
-#### Get Notifications
-```http
-GET /api/notifications
-Authorization: Bearer <token>
-```
-
-</details>
-
-### Response Format
-
-#### Success Response
-```json
-{
-  "success": true,
-  "data": { /* response data */ },
-  "message": "Operation completed successfully"
-}
-```
-
-#### Error Response
-```json
-{
-  "success": false,
-  "error": "Error message",
-  "code": "ERROR_CODE"
-}
-```
-
-### Status Codes
-
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `500` - Internal Server Error
+📖 Full API documentation available at `/api/docs` when running the server.
 
 ---
 
-## 🎛️ Admin Panel
+## 👑 Admin Panel
 
-The admin panel provides comprehensive management capabilities for the entire platform.
+Access admin panel at `/admin` with admin credentials.
 
-### Access
+### Features
 
-- **URL**: `/admin`
-- **Login**: Requires admin role
-- **Features**: Modern UI with search, dark mode, responsive sidebar
-
-### Dashboard Sections
-
-<details open>
-<summary><b>📦 Products Management</b></summary>
-
-- **Categories** - Create/edit product categories with icons
-- **Products** - Full CRUD operations, bulk import, custom fields
-- **Bundles** - Create product combo deals
-- **Flash Sales** - Manage limited-time offers with countdown
-
-</details>
-
-<details>
-<summary><b>🛍️ Orders & Revenue</b></summary>
-
-- **Revenue Dashboard** - Sales analytics, charts, revenue reports
-- **Orders** - View, filter, update order status
-- **Payments** - Transaction history, payment gateway logs
-
-</details>
-
-<details>
-<summary><b>👥 User Management</b></summary>
-
-- **Users** - User accounts, roles, VIP status
-- **Vouchers** - Create discount codes with conditions
-- **Prime Boost** - Manage VIP tier benefits
-
-</details>
-
-<details>
-<summary><b>🎁 Referral System</b></summary>
-
-- **Registrations** - View referral signups
-- **Referral Codes** - Manage referral links
-- **Events** - Create promotional events
-- **Rewards** - Configure achievement rewards, check-in bonuses
-
-</details>
-
-<details>
-<summary><b>📰 Content Management</b></summary>
-
-- **Hero Banners** - Manage homepage carousel
-- **News** - Blog/news articles with rich editor
-- **Reviews** - Moderate product reviews
-- **Posts** - Social posts moderation
-- **Stories** - User stories management
-
-</details>
-
-<details>
-<summary><b>💬 Support</b></summary>
-
-- **Live Chat** - Customer support conversations
-- **Tickets** - Support ticket system
-- **Stickers** - Manage chat sticker packs
-
-</details>
-
-<details>
-<summary><b>📢 Communications</b></summary>
-
-- **Email Templates** - SMTP configuration, template editor
-- **Bulk Email** - Send newsletters/campaigns
-- **Notifications** - Push notification manager
-
-</details>
-
-<details>
-<summary><b>🌐 SMM Panel</b></summary>
-
-- **Configuration** - SMM settings
-- **Platforms** - Social media platforms
-- **Services** - SMM service packages
-- **Orders** - SMM order processing
-
-</details>
-
-<details>
-<summary><b>🏪 Marketplace</b></summary>
-
-- **Shops** - Approve/manage seller shops
-- **Boost Pricing** - Product promotion pricing
-- **Reports** - Shop performance reports
-
-</details>
-
-<details>
-<summary><b>🎨 Design Services</b></summary>
-
-- **Categories** - Design service categories
-- **Services** - Manage design listings
-- **Orders** - Design order processing
-- **Managers** - Designer management
-
-</details>
-
-<details>
-<summary><b>⚙️ Settings</b></summary>
-
-- **General** - Site name, logo, timezone, currency
-- **API Keys** - Manage secrets (PayOS, PayPal, OAuth, etc.)
-- **Translations** - i18n key management
-- **Static Pages** - Terms, Privacy Policy, About pages
-- **Theme** - Customize colors and branding
-
-</details>
-
-### Admin Features
-
-- ✅ **Advanced Search** - Quick navigation menu search
-- ✅ **Dark Mode** - Toggle light/dark theme
-- ✅ **Responsive** - Mobile-friendly admin interface
-- ✅ **Real-time Stats** - Live dashboard metrics
-- ✅ **Bulk Operations** - Import/export, bulk actions
-- ✅ **Audit Logs** - Track admin actions
-- ✅ **Role-based Access** - Granular permissions
+- 📊 **Dashboard** - Overview statistics, charts
+- 👥 **Users** - Manage users, roles, permissions
+- 📦 **Products** - Approve/reject, bulk operations
+- 🛒 **Orders** - Process orders, refunds
+- 💰 **Finance** - Revenue reports, payouts
+- ⚙️ **Settings** - Site configuration
+- 📝 **Content** - Pages, banners, announcements
+- 📋 **Logs** - Activity & security logs
 
 ---
 
-## � Deployment
+## 🐳 Deployment
 
-### Production Build
-
-#### Build Frontend
-```bash
-npm run build
-# Output: dist/
-```
-
-#### Build Backend
-```bash
-cd server
-npm run build
-# Output: server/dist/
-```
-
-### Environment Setup (Production)
-
-Update your environment variables for production:
-
-```env
-NODE_ENV=production
-FRONTEND_URL=https://yourdomain.com
-DATABASE_URL=mysql://user:pass@host:3306/prime_shop
-
-# Use strong JWT secret
-JWT_SECRET=<generate_strong_random_string>
-
-# Configure real payment credentials
-PAYOS_CLIENT_ID=<production_id>
-PAYOS_API_KEY=<production_key>
-PAYOS_CHECKSUM_KEY=<production_checksum>
-
-PAYPAL_MODE=live
-PAYPAL_CLIENT_ID=<production_id>
-PAYPAL_CLIENT_SECRET=<production_secret>
-```
-
-### Recommended Hosting Options
-
-#### Frontend (Static Sites)
-- **Vercel** ⭐ - Zero-config deployment, great DX
-- **Netlify** - Simple deployment, CDN included
-- **Cloudflare Pages** - Fast, free tier available
-
-#### Backend (Node.js)
-- **Railway** ⭐ - Easy deployment, built-in MySQL
-- **Render** - Free tier available, auto-deploy from Git
-- **DigitalOcean App Platform** - Managed platform
-- **AWS Elastic Beanstalk** - Enterprise-grade
-- **VPS** (DigitalOcean, Linode, Vultr) - Full control
-
-#### Database
-- **PlanetScale** ⭐ - Serverless MySQL, free tier
-- **AWS RDS** - Managed MySQL, scalable
-- **DigitalOcean Managed Database** - Simple setup
-- **Railway** - Built-in database with app
-
-#### Media Storage
-- **Cloudinary** - Image CDN, transformations
-- **Cloudflare R2** - S3-compatible, zero egress fees
-- **AWS S3** - Industry standard
-
-### Deployment Steps
-
-#### Deploy to Vercel (Frontend)
+### Docker (Recommended)
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
+# Production build
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-#### Deploy to Railway (Full Stack)
-
-1. Create Railway account
-2. New Project → Deploy from GitHub
-3. Add MySQL database
-4. Configure environment variables
-5. Deploy backend and frontend separately
-
-#### Deploy to VPS (Manual)
+### Manual Deployment
 
 ```bash
-# SSH to your server
-ssh user@your-server-ip
-
-# Install Node.js 18+
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Install MySQL
-sudo apt install mysql-server
-
-# Clone and setup
-git clone <your-repo>
-cd prime-shop
-npm install
-
-cd server
-npm install
-npx prisma migrate deploy
+# Build frontend
 npm run build
 
-# Install PM2 for process management
-npm install -g pm2
+# Build backend
+cd server && npm run build
 
-# Start backend
-cd server
-pm2 start dist/index.js --name prime-api
-
-# Build and serve frontend with nginx
-cd ..
-npm run build
-sudo apt install nginx
-# Configure nginx to serve dist/ folder
+# Start with PM2
+pm2 start ecosystem.config.js
 ```
 
-### Post-Deployment Checklist
-
-- [ ] Update `FRONTEND_URL` and `DATABASE_URL`
-- [ ] Change JWT secret to strong random string
-- [ ] Configure real payment gateway credentials
-- [ ] Set up SSL certificate (Let's Encrypt)
-- [ ] Configure SMTP for production emails
-- [ ] Test all payment flows
-- [ ] Enable error monitoring (Sentry)
-- [ ] Set up database backups
-- [ ] Configure CDN for media files
-- [ ] Test OAuth redirects with production URLs
+📖 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed instructions.
 
 ---
 
-## 📸 Screenshots
+## 🧪 Testing
 
-> Coming soon - Add screenshots of your deployed application
+```bash
+cd server
+
+# Run tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode
+npm run test:watch
+```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow TypeScript best practices
-- Use meaningful commit messages
-- Write tests for new features
-- Update documentation as needed
-- Follow the existing code style
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-### What this means:
-- ✅ Commercial use allowed
-- ✅ Modification allowed
-- ✅ Distribution allowed
-- ✅ Private use allowed
-- ⚠️ No warranty provided
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## 📚 Documentation Links
 
-Built with amazing open-source technologies:
-
-- [React](https://reactjs.org/) - UI library
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-- [Vite](https://vitejs.dev/) - Build tool
-- [TailwindCSS](https://tailwindcss.com/) - CSS framework
-- [Shadcn/UI](https://ui.shadcn.com/) - Component library
-- [Prisma](https://www.prisma.io/) - ORM
-- [Express](https://expressjs.com/) - Backend framework
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/prime-shop/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/prime-shop/discussions)
-- **Email**: support@yourwebsite.com
-
----
-
-## 🗺️ Roadmap
-
-### ✅ Completed Features
-
-- [x] **WebSocket real-time features** - Socket.IO integrated for live chat, notifications, typing indicators
-- [x] **Advanced analytics dashboard** - Seller stats, revenue charts, user analytics with comprehensive insights
-- [x] **Multi-currency support** - VND/USD switching with configurable exchange rates
-- [x] **Subscription system** - Prime Boost plans, VIP tier progression (Bronze → Legend), affiliate tiers
-- [x] **API rate limiting** - Express rate limiter with 8 configured limiters (auth, payment, upload, email, etc.)
-- [x] **Docker containerization** - Full Docker setup with docker-compose, multi-stage builds, health checks
-- [x] **Testing infrastructure** - Vitest configured with test setup and example tests
-- [x] **Discord bot integration** - User notification system with DM delivery and granular preferences
-
-### 🚧 In Progress
-
-- [~] **Two-factor authentication** - Database schema ready, partial email template support (needs TOTP implementation)
-- [~] **Comprehensive testing** - Test infrastructure ready, needs full test coverage
-
-### 📋 Planned Features
-
-- [ ] Mobile app (React Native)
-- [ ] Performance optimizations (image lazy loading, code splitting, caching strategies)
-- [ ] Redis integration for distributed rate limiting
-- [ ] Full test coverage (unit + integration + e2e)
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Kubernetes deployment configs
+| Document | Description |
+|----------|-------------|
+| [QUICK_START.md](QUICK_START.md) | Quick start guide |
+| [DOCKER.md](DOCKER.md) | Docker deployment |
+| [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) | Full deployment guide |
+| [docs/MYSQL_SETUP.md](docs/MYSQL_SETUP.md) | MySQL setup |
+| [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md) | Environment variables |
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by Prime Team**
+**Built with ❤️ by [Your Name]**
 
 ⭐ Star this repo if you find it useful!
-
-[⬆️ Back to Top](#-prime-shop)
 
 </div>

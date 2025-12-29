@@ -1,53 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-export interface DbProduct {
-  id: string;
-  category_id: string | null;
-  name: string;
-  slug: string;
-  description: string | null;
-  short_description: string | null;
-  warranty_info: string | null;
-  usage_guide: string | null;
-  image_url: string | null;
-  is_active: boolean;
-  is_featured: boolean;
-  sort_order: number;
-  style: 'premium' | 'game_account' | 'game_topup';
-  price: number | null;
-  account_info: Record<string, string> | null;
-  external_api: string | null;
-  external_category_id: string | null;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbProductPackage {
-  id: string;
-  product_id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  original_price: number | null;
-  is_active: boolean;
-  is_in_stock: boolean;
-  sort_order: number;
-  image_url: string | null;
-  external_product_id: string | null;
-  markup_percent: number | null; // Markup % for auto-pricing from source
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DbProductCustomField {
-  id: string;
-  product_id: string;
-  field_name: string;
-  field_type: string;
-  is_required: boolean;
-  placeholder: string | null;
+// Re-export from MySQL version for backward compatibility
+// All database operations now go through MySQL backend
+export * from './useProducts.mysql';
   sort_order: number;
   created_at: string;
 }

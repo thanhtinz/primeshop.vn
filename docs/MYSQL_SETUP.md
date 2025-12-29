@@ -1,8 +1,8 @@
-# 🗄️ Hướng Dẫn Cài Đặt MySQL (Tự Host Database)
+# 🗄️ Hướng Dẫn Cài Đặt MySQL
 
-Hướng dẫn này dành cho trường hợp bạn muốn tự host database MySQL thay vì sử dụng Supabase PostgreSQL.
+Hướng dẫn này giúp bạn cài đặt và cấu hình MySQL cho project.
 
-> ⚠️ **Lưu ý**: Project này được thiết kế để sử dụng với Supabase (PostgreSQL). Nếu muốn dùng MySQL, cần chỉnh sửa schema và một số queries.
+> ✅ **Project này đã được chuyển sang sử dụng MySQL** với Express backend server và Prisma ORM.
 
 ---
 
@@ -14,6 +14,30 @@ Hướng dẫn này dành cho trường hợp bạn muốn tự host database My
 4. [Migration Schema](#migration-schema)
 5. [Kết Nối Với Prisma](#kết-nối-với-prisma)
 6. [Backup & Restore](#backup--restore)
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Cài đặt MySQL (xem hướng dẫn bên dưới)
+
+# 2. Tạo database
+mysql -u root -p -e "CREATE DATABASE prime_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 3. Cấu hình .env trong thư mục /server
+DATABASE_URL="mysql://root:password@localhost:3306/prime_db"
+
+# 4. Chạy migration
+cd server
+npm install
+npm run db:generate
+npm run db:push
+npm run db:seed
+
+# 5. Khởi động server
+npm run dev
+```
 
 ---
 
@@ -79,8 +103,8 @@ docker pull mysql:8.0
 # Chạy container
 docker run --name mysql-primeshop \
   -e MYSQL_ROOT_PASSWORD=your_root_password \
-  -e MYSQL_DATABASE=primeshop \
-  -e MYSQL_USER=primeshop_user \
+  -e MYSQL_DATABASE=prime_db \
+  -e MYSQL_USER=prime_user \
   -e MYSQL_PASSWORD=your_password \
   -p 3306:3306 \
   -v mysql_data:/var/lib/mysql \

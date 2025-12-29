@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/api-client';
 
 export type NotificationType = 'order' | 'security' | 'system' | 'promo';
 
@@ -19,7 +19,7 @@ export const createNotification = async ({
   link
 }: CreateNotificationParams) => {
   try {
-    const { error } = await supabase
+    const { error } = await db
       .from('notifications')
       .insert({
         user_id: userId,
@@ -54,7 +54,7 @@ export const createBulkNotifications = async (
       link,
     }));
 
-    const { error } = await supabase
+    const { error } = await db
       .from('notifications')
       .insert(notifications);
 

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,8 +14,46 @@ interface SendOTPRequest {
   type: "enable_2fa" | "login_verify";
 }
 
+// Send email via SMTP
+async function sendViaSMTP(
+  from: string,
+  fromName: string,
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  smtpConfig: Record<string, string>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpConfig.smtp_host,
+        port: Number(smtpConfig.smtp_port) || 587,
+        tls: smtpConfig.smtp_secure === 'true',
+        auth: {
+          username: smtpConfig.smtp_user,
+          password: smtpConfig.smtp_pass,
+        },
+      },
+    });
+
+    await client.send({
+      from: { address: from, name: fromName },
+      to: [{ address: to }],
+      subject,
+      content: text,
+      html,
+    });
+
+    await client.close();
+    return { success: true };
+  } catch (error) {
+    console.error('[send-otp] SMTP error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'SMTP error' };
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,11 +61,31 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, otp, type }: SendOTPRequest = await req.json();
 
-    console.log(`Sending OTP to ${email} for ${type}`);
+    console.log(`[send-otp] Sending OTP to ${email} for ${type}`);
 
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
+    // Create Supabase client to get SMTP settings
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Get site settings including SMTP config
+    const { data: settings } = await supabaseClient
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from", "smtp_secure", "site_name"]);
+
+    const smtpConfig: Record<string, string> = {};
+    settings?.forEach((s: { key: string; value: string }) => {
+      smtpConfig[s.key] = s.value;
+    });
+
+    if (!smtpConfig.smtp_host || !smtpConfig.smtp_user || !smtpConfig.smtp_pass) {
+      throw new Error("SMTP configuration is not complete");
     }
+
+    const siteName = smtpConfig.site_name || "Shop";
+    const fromEmail = smtpConfig.smtp_from || smtpConfig.smtp_user;
 
     const subject = type === "enable_2fa" 
       ? "Xác minh bật 2FA - Mã OTP của bạn"
@@ -87,40 +145,36 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "PrimeShop <hotro@primeshop.vn>",
-        to: [email],
-        subject: subject,
-        html: htmlContent,
-      }),
-    });
+    const textContent = `${title}\n\n${description}\n\nMã xác minh của bạn: ${otp}\n\nMã này sẽ hết hạn sau 10 phút. Không chia sẻ mã này với bất kỳ ai.`;
 
-    const data = await response.json();
+    const result = await sendViaSMTP(
+      fromEmail,
+      siteName,
+      email,
+      subject,
+      htmlContent,
+      textContent,
+      smtpConfig
+    );
 
-    if (!response.ok) {
-      console.error("Resend API error:", data);
-      throw new Error(data.message || "Failed to send email");
+    if (!result.success) {
+      throw new Error(result.error || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", data);
+    console.log("[send-otp] Email sent successfully via SMTP");
 
-    return new Response(JSON.stringify({ success: true, data }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         ...corsHeaders,
       },
     });
-  } catch (error: any) {
-    console.error("Error in send-otp function:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[send-otp] Error:", errorMessage);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

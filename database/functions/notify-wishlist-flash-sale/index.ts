@@ -1,10 +1,50 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Send email via SMTP
+async function sendViaSMTP(
+  from: string,
+  fromName: string,
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+  smtpConfig: Record<string, string>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const client = new SMTPClient({
+      connection: {
+        hostname: smtpConfig.smtp_host,
+        port: Number(smtpConfig.smtp_port) || 587,
+        tls: smtpConfig.smtp_secure === 'true',
+        auth: {
+          username: smtpConfig.smtp_user,
+          password: smtpConfig.smtp_pass,
+        },
+      },
+    });
+
+    await client.send({
+      from: { address: from, name: fromName },
+      to: [{ address: to }],
+      subject,
+      content: text,
+      html,
+    });
+
+    await client.close();
+    return { success: true };
+  } catch (error) {
+    console.error('[notify-wishlist] SMTP error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'SMTP error' };
+  }
+}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -14,7 +54,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log("Starting wishlist flash sale notification process...");
@@ -81,10 +120,21 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: siteSettings } = await supabase
       .from("site_settings")
       .select("key, value")
-      .in("key", ["site_name", "site_url"]);
+      .in("key", ["site_name", "site_url", "smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from", "smtp_secure"]);
 
-    const siteName = siteSettings?.find(s => s.key === "site_name")?.value || "DigiShop";
-    const siteUrl = siteSettings?.find(s => s.key === "site_url")?.value || "https://your-site.com";
+    const settingsMap: Record<string, string> = {};
+    siteSettings?.forEach((s: { key: string; value: string }) => {
+      settingsMap[s.key] = s.value;
+    });
+
+    const siteName = settingsMap.site_name || "DigiShop";
+    const siteUrl = settingsMap.site_url || "https://your-site.com";
+    const fromEmail = settingsMap.smtp_from || settingsMap.smtp_user;
+
+    // Check SMTP configuration
+    if (!settingsMap.smtp_host || !settingsMap.smtp_user || !settingsMap.smtp_pass) {
+      throw new Error("SMTP configuration is not complete");
+    }
 
     let sentCount = 0;
     const errors: string[] = [];
@@ -96,63 +146,62 @@ const handler = async (req: Request): Promise<Response> => {
       const flashSaleItem = flashSaleItems.find(item => item.product_id === wishlistItem.product_id);
       if (!flashSaleItem) continue;
 
-      const product = flashSaleItem.product as any;
-      const flashSale = flashSaleItem.flash_sale as any;
+      const product = flashSaleItem.product as { id: string; name: string; slug: string; image_url: string };
+      const flashSale = flashSaleItem.flash_sale as { id: string; name: string };
 
-      console.log(`Sending notification to ${profile.email} for product ${product?.name}`);
+      console.log(`[notify-wishlist] Sending notification to ${profile.email} for product ${product?.name}`);
 
       try {
-        // Send email via Resend API
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${resendApiKey}`,
-          },
-          body: JSON.stringify({
-            from: `${siteName} <hotro@primeshop.vn>`,
-            to: [profile.email],
-            subject: `🔥 Flash Sale! ${product?.name} đang giảm ${flashSaleItem.discount_percent}%`,
-            html: `
-              <!DOCTYPE html>
-              <html>
-              <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-              <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #f0f0f0;">
-                  <h1 style="color: #ef4444; margin: 0;">🔥 FLASH SALE 🔥</h1>
-                  <p style="color: #666; margin-top: 10px;">Sản phẩm yêu thích của bạn đang giảm giá!</p>
+        const subject = `🔥 Flash Sale! ${product?.name} đang giảm ${flashSaleItem.discount_percent}%`;
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #f0f0f0;">
+              <h1 style="color: #ef4444; margin: 0;">🔥 FLASH SALE 🔥</h1>
+              <p style="color: #666; margin-top: 10px;">Sản phẩm yêu thích của bạn đang giảm giá!</p>
+            </div>
+            <div style="padding: 30px 0;">
+              <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                ${product?.image_url ? `<img src="${product.image_url}" alt="${product?.name}" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">` : ""}
+                <h2 style="margin: 0 0 10px 0; color: #1f2937;">${product?.name}</h2>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="text-decoration: line-through; color: #9ca3af; font-size: 14px;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(flashSaleItem.original_price)}</span>
+                  <span style="background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">-${flashSaleItem.discount_percent}%</span>
                 </div>
-                <div style="padding: 30px 0;">
-                  <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                    ${product?.image_url ? `<img src="${product.image_url}" alt="${product?.name}" style="width: 100%; max-width: 200px; border-radius: 8px; margin-bottom: 15px;">` : ""}
-                    <h2 style="margin: 0 0 10px 0; color: #1f2937;">${product?.name}</h2>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                      <span style="text-decoration: line-through; color: #9ca3af; font-size: 14px;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(flashSaleItem.original_price)}</span>
-                      <span style="background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">-${flashSaleItem.discount_percent}%</span>
-                    </div>
-                    <p style="font-size: 24px; font-weight: bold; color: #ef4444; margin: 10px 0;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(flashSaleItem.sale_price)}</p>
-                  </div>
-                  <div style="text-align: center;">
-                    <a href="${siteUrl}/product/${product?.slug}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px;">Mua ngay</a>
-                  </div>
-                  <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">⏰ Flash Sale: ${flashSale?.name}</p>
-                </div>
-                <div style="border-top: 2px solid #f0f0f0; padding-top: 20px; text-align: center; color: #9ca3af; font-size: 12px;">
-                  <p>Bạn nhận được email này vì đã bật thông báo giảm giá cho sản phẩm này trong danh sách yêu thích.</p>
-                  <p>© ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
-                </div>
-              </body>
-              </html>
-            `,
-          }),
-        });
+                <p style="font-size: 24px; font-weight: bold; color: #ef4444; margin: 10px 0;">${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(flashSaleItem.sale_price)}</p>
+              </div>
+              <div style="text-align: center;">
+                <a href="${siteUrl}/product/${product?.slug}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px;">Mua ngay</a>
+              </div>
+              <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">⏰ Flash Sale: ${flashSale?.name}</p>
+            </div>
+            <div style="border-top: 2px solid #f0f0f0; padding-top: 20px; text-align: center; color: #9ca3af; font-size: 12px;">
+              <p>Bạn nhận được email này vì đã bật thông báo giảm giá cho sản phẩm này trong danh sách yêu thích.</p>
+              <p>© ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
+            </div>
+          </body>
+          </html>
+        `;
+        const textContent = `Flash Sale! ${product?.name} đang giảm ${flashSaleItem.discount_percent}%! Giá chỉ còn ${new Intl.NumberFormat("vi-VN").format(flashSaleItem.sale_price)}đ. Xem ngay: ${siteUrl}/product/${product?.slug}`;
 
-        if (!emailRes.ok) {
-          const errorText = await emailRes.text();
-          throw new Error(errorText);
+        // Send email via SMTP
+        const result = await sendViaSMTP(
+          fromEmail,
+          siteName,
+          profile.email,
+          subject,
+          htmlContent,
+          textContent,
+          settingsMap
+        );
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to send email");
         }
 
-        console.log(`Email sent to ${profile.email}`);
+        console.log(`[notify-wishlist] Email sent to ${profile.email}`);
         sentCount++;
 
         // Create in-app notification

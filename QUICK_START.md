@@ -1,67 +1,137 @@
-# Prime Shop - Quick Start Guide
+# 🚀 Prime Shop - Quick Start Guide
 
-## 🚀 Quick Start Options
+Hướng dẫn nhanh để bắt đầu với PrimeShop.
 
-### Option 1: Docker (Recommended for Quick Setup)
+---
 
-**Prerequisites:** Docker & Docker Compose installed
+## 📋 Prerequisites
+
+- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **MySQL** 8.0+ ([Download](https://dev.mysql.com/downloads/))
+- **Git** ([Download](https://git-scm.com/))
+
+---
+
+## 🎯 Quick Start Options
+
+### Option 1: Docker (Khuyến nghị - Nhanh nhất)
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/yourusername/prime-shop.git
 cd prime-shop
 
-# 2. Setup environment
+# 2. Copy environment file
 cp .env.docker .env
-# Edit .env with your configuration
+# Chỉnh sửa .env với cấu hình của bạn
 
-# 3. Start everything with Docker
+# 3. Khởi động với Docker
 docker-compose up -d
 
-# 4. Access the application
+# 4. Truy cập
 # Frontend: http://localhost:3000
-# Backend: http://localhost:3001/api
-# Admin: http://localhost:3000/admin
+# Backend:  http://localhost:3001/api
+# Admin:    http://localhost:3000/admin
 ```
 
-See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
+📖 Xem chi tiết: [DOCKER.md](DOCKER.md)
+
+---
 
 ### Option 2: Local Development
 
-**Prerequisites:** Node.js 18+, MySQL 8.0+
+#### Bước 1: Cài đặt Dependencies
 
 ```bash
-# 1. Install dependencies
+# Clone repo
+git clone https://github.com/yourusername/prime-shop.git
+cd prime-shop
+
+# Frontend dependencies
 npm install
+
+# Backend dependencies
 cd server && npm install && cd ..
+```
 
-# 2. Setup environment variables
-# Create server/.env (see Configuration section)
+#### Bước 2: Cấu hình Database
 
-# 3. Setup database
+```bash
+# Tạo database MySQL
+mysql -u root -p -e "CREATE DATABASE prime_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+#### Bước 3: Cấu hình Environment
+
+**Frontend** (`.env` tại root):
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=http://localhost:3001
+VITE_APP_URL=http://localhost:5173
+```
+
+**Backend** (`server/.env`):
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/prime_db"
+JWT_SECRET=your-super-secret-jwt-key-min-32-chars
+JWT_REFRESH_SECRET=your-refresh-secret-key-min-32-chars
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
+# Email
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=noreply@yourdomain.com
+```
+
+#### Bước 4: Setup Database
+
+```bash
 cd server
-npx prisma generate
-npx prisma migrate deploy
-npx prisma db seed
-cd ..
 
-# 4. Start servers (2 terminals)
+# Generate Prisma Client
+npx prisma generate
+
+# Push schema to database
+npx prisma db push
+
+# Seed initial data
+npx prisma db seed
+
+cd ..
+```
+
+#### Bước 5: Khởi động
+
+```bash
 # Terminal 1 - Backend
 cd server && npm run dev
 
 # Terminal 2 - Frontend
 npm run dev
-
-# 5. Access the application
-# Frontend: http://localhost:5173
-# Backend: http://localhost:3001/api
 ```
 
-## 📋 Default Credentials
+#### Bước 6: Truy cập
 
-After seeding database:
-- **Admin**: admin@example.com / admin123
-- **User**: user@example.com / user123
+- 🌐 **Frontend**: http://localhost:5173
+- 🔌 **Backend API**: http://localhost:3001/api
+- 👑 **Admin Panel**: http://localhost:5173/admin
+
+---
+
+## 🔑 Default Credentials
+
+Sau khi seed database:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@example.com | admin123 |
+| User | user@example.com | user123 |
+
+---
 
 ## 🧪 Running Tests
 
@@ -78,7 +148,49 @@ npm run test:ui
 npm run test:coverage
 ```
 
+---
+
 ## 🔧 Common Commands
+
+### Database
+
+```bash
+cd server
+
+# Mở Prisma Studio (GUI quản lý database)
+npx prisma studio
+
+# Tạo migration mới
+npx prisma migrate dev --name migration_name
+
+# Apply migrations (production)
+npx prisma migrate deploy
+
+# Reset database (⚠️ XÓA HẾT DATA)
+npx prisma migrate reset
+
+# Seed lại data
+npx prisma db seed
+```
+
+### Development
+
+```bash
+# Build frontend for production
+npm run build
+
+# Build backend
+cd server && npm run build
+
+# Run production build
+cd server && npm start
+
+# Lint code
+npm run lint
+
+# Type check
+npm run type-check
+```
 
 ### Docker
 
@@ -94,79 +206,123 @@ docker-compose down
 
 # Rebuild after code changes
 docker-compose build --no-cache
+
+# Remove all data (volumes)
+docker-compose down -v
 ```
 
-### Database
+---
+
+## 📁 Project Structure
+
+```
+prime-shop/
+├── src/                    # Frontend source
+│   ├── components/         # React components
+│   ├── contexts/           # React contexts
+│   ├── hooks/              # Custom hooks (MySQL versions)
+│   ├── lib/                # Utilities & API client
+│   ├── pages/              # Page components
+│   └── types/              # TypeScript types
+│
+├── server/                 # Backend source
+│   ├── src/
+│   │   ├── routes/         # API routes
+│   │   ├── middleware/     # Express middleware
+│   │   ├── services/       # Business logic
+│   │   └── utils/          # Utilities
+│   └── prisma/
+│       ├── schema.prisma   # Database schema
+│       └── seed.ts         # Seed data
+│
+├── docs/                   # Documentation
+├── public/                 # Static assets
+└── docker-compose.yml      # Docker config
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Port đã được sử dụng
+
+```bash
+# Windows - Tìm process đang dùng port
+netstat -ano | findstr :3000
+netstat -ano | findstr :3001
+
+# Kill process
+taskkill /PID <process_id> /F
+
+# Linux/Mac
+lsof -i :3000
+kill -9 <PID>
+```
+
+### Database connection issues
+
+```bash
+# Kiểm tra MySQL đang chạy
+# Windows
+net start mysql
+
+# Linux
+sudo systemctl status mysql
+
+# Verify connection string trong server/.env
+# DATABASE_URL="mysql://user:password@localhost:3306/prime_db"
+```
+
+### Prisma issues
 
 ```bash
 cd server
 
-# Open Prisma Studio
-npx prisma studio
+# Regenerate client
+npx prisma generate
 
-# Create migration
-npx prisma migrate dev --name migration_name
-
-# Reset database (WARNING: deletes all data)
+# Reset và migrate lại
 npx prisma migrate reset
+
+# Kiểm tra schema
+npx prisma validate
 ```
 
-### Development
+### CORS errors
 
-```bash
-# Build for production
-npm run build
-cd server && npm run build
-
-# Run production build
-cd server && npm start
+Đảm bảo `FRONTEND_URL` trong `server/.env` đúng:
+```env
+FRONTEND_URL=http://localhost:5173
 ```
+
+### JWT errors
+
+Đảm bảo `JWT_SECRET` và `JWT_REFRESH_SECRET` đủ dài (tối thiểu 32 ký tự):
+```env
+JWT_SECRET=your-super-secret-key-at-least-32-characters-long
+JWT_REFRESH_SECRET=another-secret-key-at-least-32-characters-long
+```
+
+---
 
 ## 📚 Documentation
 
-- [README.md](README.md) - Full documentation
-- [DOCKER.md](DOCKER.md) - Docker deployment guide
-- API Documentation - See README API section
+| File | Description |
+|------|-------------|
+| [README.md](README.md) | Tổng quan dự án |
+| [DOCKER.md](DOCKER.md) | Hướng dẫn Docker |
+| [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) | Hướng dẫn triển khai VPS |
+| [docs/MYSQL_SETUP.md](docs/MYSQL_SETUP.md) | Hướng dẫn MySQL chi tiết |
+| [docs/ENV_VARIABLES.md](docs/ENV_VARIABLES.md) | Mô tả biến môi trường |
 
-## 🐛 Troubleshooting
-
-### Port already in use
-```bash
-# Check what's using the port
-netstat -ano | findstr :3000
-netstat -ano | findstr :3001
-
-# Kill the process
-taskkill /PID <process_id> /F
-```
-
-### Database connection issues
-- Check MySQL is running
-- Verify DATABASE_URL in .env
-- Ensure database exists
-
-### Rate limiting issues
-- Admin users bypass rate limits
-- Check rate limiter configuration in server/src/middleware/rateLimiter.ts
-
-## 💡 Tips
-
-1. **Development**: Use `npm run dev` for hot reload
-2. **Testing**: Write tests in `server/src/__tests__/`
-3. **Rate Limits**: Auth endpoints are strictly limited (5 req/15min)
-4. **Docker**: Use docker-compose for easy full-stack development
-5. **Logs**: Check `docker-compose logs` for debugging
-
-## 🔗 Quick Links
-
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001/api
-- Admin Panel: http://localhost:5173/admin
-- Health Check: http://localhost:3001/api/health
-- Prisma Studio: Run `npx prisma studio` in server/
+---
 
 ## 🆘 Need Help?
 
-- [GitHub Issues](https://github.com/yourusername/prime-shop/issues)
-- [Discussions](https://github.com/yourusername/prime-shop/discussions)
-- Email: support@yourwebsite.com
+- 📖 Đọc documentation trong folder `docs/`
+- 🐛 Tạo Issue trên GitHub
+- 💬 Join Discord community
+
+---
+
+**Happy coding! 🎉**

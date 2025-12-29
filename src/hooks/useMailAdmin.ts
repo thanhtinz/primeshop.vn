@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db, auth } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type {
   MailDomain,
@@ -20,7 +20,7 @@ export const useMailDomains = () => {
   return useQuery({
     queryKey: ['mail-domains'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_domains')
         .select('*')
         .order('is_default', { ascending: false })
@@ -31,7 +31,7 @@ export const useMailDomains = () => {
       // Get mailbox counts for each domain
       const domains = data as MailDomain[];
       for (const domain of domains) {
-        const { count } = await supabase
+        const { count } = await db
           .from('mailboxes')
           .select('*', { count: 'exact', head: true })
           .eq('domain_id', domain.id);
@@ -49,7 +49,7 @@ export const useMailDomain = (domainId?: string) => {
     queryFn: async () => {
       if (!domainId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_domains')
         .select('*')
         .eq('id', domainId)
@@ -66,7 +66,7 @@ export const usePublicDomains = () => {
   return useQuery({
     queryKey: ['mail-domains-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_domains')
         .select('id, domain, display_name, max_storage_mb, max_message_size_mb')
         .eq('is_active', true)
@@ -84,7 +84,7 @@ export const useCreateDomain = () => {
 
   return useMutation({
     mutationFn: async (data: CreateDomainData) => {
-      const { data: domain, error } = await supabase
+      const { data: domain, error } = await db
         .from('mail_domains')
         .insert({
           domain: data.domain.toLowerCase(),
@@ -119,7 +119,7 @@ export const useUpdateDomain = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<MailDomain> & { id: string }) => {
-      const { data: domain, error } = await supabase
+      const { data: domain, error } = await db
         .from('mail_domains')
         .update(data)
         .eq('id', id)
@@ -146,7 +146,7 @@ export const useDeleteDomain = () => {
   return useMutation({
     mutationFn: async (domainId: string) => {
       // Check if domain has mailboxes
-      const { count } = await supabase
+      const { count } = await db
         .from('mailboxes')
         .select('*', { count: 'exact', head: true })
         .eq('domain_id', domainId);
@@ -155,7 +155,7 @@ export const useDeleteDomain = () => {
         throw new Error(`Không thể xóa! Còn ${count} mailbox trong domain này.`);
       }
 
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_domains')
         .delete()
         .eq('id', domainId)
@@ -181,7 +181,7 @@ export const useDomainAdmins = (domainId?: string) => {
     queryFn: async () => {
       if (!domainId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_domain_admins')
         .select(`
           *,
@@ -206,7 +206,7 @@ export const useAddDomainAdmin = () => {
 
   return useMutation({
     mutationFn: async (data: { domain_id: string; user_id: string; role?: 'owner' | 'admin' | 'manager' }) => {
-      const { data: admin, error } = await supabase
+      const { data: admin, error } = await db
         .from('mail_domain_admins')
         .insert({
           domain_id: data.domain_id,
@@ -238,7 +238,7 @@ export const useRemoveDomainAdmin = () => {
 
   return useMutation({
     mutationFn: async (adminId: string) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_domain_admins')
         .delete()
         .eq('id', adminId);
@@ -261,7 +261,7 @@ export const useAdminMailboxes = (domainId?: string) => {
   return useQuery({
     queryKey: ['admin-mailboxes', domainId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from('mailboxes')
         .select(`
           *,
@@ -291,7 +291,7 @@ export const useAdminCreateMailbox = () => {
   return useMutation({
     mutationFn: async (data: CreateMailboxData) => {
       // Get domain info
-      const { data: domain } = await supabase
+      const { data: domain } = await db
         .from('mail_domains')
         .select('domain, max_storage_mb')
         .eq('id', data.domain_id)
@@ -302,7 +302,7 @@ export const useAdminCreateMailbox = () => {
       const email_address = `${data.local_part.toLowerCase()}@${domain.domain}`;
 
       // Check if email exists
-      const { count } = await supabase
+      const { count } = await db
         .from('mailboxes')
         .select('*', { count: 'exact', head: true })
         .eq('email_address', email_address);
@@ -311,7 +311,7 @@ export const useAdminCreateMailbox = () => {
         throw new Error('Email này đã tồn tại!');
       }
 
-      const { data: mailbox, error } = await supabase
+      const { data: mailbox, error } = await db
         .from('mailboxes')
         .insert({
           domain_id: data.domain_id,
@@ -346,7 +346,7 @@ export const useAdminUpdateMailbox = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Mailbox> & { id: string }) => {
-      const { data: mailbox, error } = await supabase
+      const { data: mailbox, error } = await db
         .from('mailboxes')
         .update(data)
         .eq('id', id)
@@ -371,7 +371,7 @@ export const useAdminDeleteMailbox = () => {
 
   return useMutation({
     mutationFn: async (mailboxId: string) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mailboxes')
         .delete()
         .eq('id', mailboxId);
@@ -395,7 +395,7 @@ export const useMailAliases = (domainId?: string) => {
   return useQuery({
     queryKey: ['mail-aliases', domainId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from('mail_aliases')
         .select(`
           *,
@@ -427,7 +427,7 @@ export const useCreateAlias = () => {
 
   return useMutation({
     mutationFn: async (data: { domain_id: string; local_part: string; mailbox_id: string }) => {
-      const { data: alias, error } = await supabase
+      const { data: alias, error } = await db
         .from('mail_aliases')
         .insert({
           domain_id: data.domain_id,
@@ -459,7 +459,7 @@ export const useDeleteAlias = () => {
 
   return useMutation({
     mutationFn: async (aliasId: string) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_aliases')
         .delete()
         .eq('id', aliasId);
@@ -482,7 +482,7 @@ export const useDistributionLists = (domainId?: string) => {
   return useQuery({
     queryKey: ['distribution-lists', domainId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from('mail_distribution_lists')
         .select('*')
         .order('local_part');
@@ -498,7 +498,7 @@ export const useDistributionLists = (domainId?: string) => {
       // Get member counts
       const lists = data as MailDistributionList[];
       for (const list of lists) {
-        const { count } = await supabase
+        const { count } = await db
           .from('mail_distribution_list_members')
           .select('*', { count: 'exact', head: true })
           .eq('list_id', list.id)
@@ -522,7 +522,7 @@ export const useCreateDistributionList = () => {
       description?: string;
       allow_external_senders?: boolean;
     }) => {
-      const { data: list, error } = await supabase
+      const { data: list, error } = await db
         .from('mail_distribution_lists')
         .insert({
           domain_id: data.domain_id,
@@ -562,7 +562,7 @@ export const useMailActivityLogs = (filters?: {
   return useQuery({
     queryKey: ['mail-activity-logs', filters],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from('mail_activity_logs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -596,7 +596,7 @@ export const useMailSecuritySettings = (domainId?: string) => {
     queryFn: async () => {
       if (!domainId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_security_settings')
         .select('*')
         .eq('domain_id', domainId)
@@ -615,7 +615,7 @@ export const useUpdateSecuritySettings = () => {
   return useMutation({
     mutationFn: async ({ domain_id, ...data }: Partial<MailSecuritySettings> & { domain_id: string }) => {
       // Upsert security settings
-      const { data: settings, error } = await supabase
+      const { data: settings, error } = await db
         .from('mail_security_settings')
         .upsert({
           domain_id,
@@ -656,13 +656,13 @@ export const useDomainStats = (domainId?: string) => {
       };
 
       // Get mailbox counts
-      const { count: total } = await supabase
+      const { count: total } = await db
         .from('mailboxes')
         .select('*', { count: 'exact', head: true })
         .eq('domain_id', domainId);
       stats.total_mailboxes = total || 0;
 
-      const { count: active } = await supabase
+      const { count: active } = await db
         .from('mailboxes')
         .select('*', { count: 'exact', head: true })
         .eq('domain_id', domainId)
@@ -670,7 +670,7 @@ export const useDomainStats = (domainId?: string) => {
       stats.active_mailboxes = active || 0;
 
       // Get storage used
-      const { data: mailboxes } = await supabase
+      const { data: mailboxes } = await db
         .from('mailboxes')
         .select('used_storage_mb')
         .eq('domain_id', domainId);
@@ -693,11 +693,11 @@ export const useCanManageDomain = (domainId?: string) => {
     queryFn: async () => {
       if (!domainId) return false;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await auth.getUser();
       if (!user) return false;
 
       // Check if user is domain admin
-      const { count } = await supabase
+      const { count } = await db
         .from('mail_domain_admins')
         .select('*', { count: 'exact', head: true })
         .eq('domain_id', domainId)
@@ -717,7 +717,7 @@ export const useSystemMailbox = () => {
     queryKey: ['system-mailbox'],
     queryFn: async () => {
       // Get default domain first
-      const { data: defaultDomain } = await supabase
+      const { data: defaultDomain } = await db
         .from('mail_domains')
         .select('domain')
         .eq('is_default', true)
@@ -728,7 +728,7 @@ export const useSystemMailbox = () => {
 
       const systemEmail = `noreply@${defaultDomain.domain}`;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mailboxes')
         .select('*')
         .eq('email_address', systemEmail)
@@ -750,7 +750,7 @@ export const useSystemSentEmails = (page = 1, limit = 50) => {
       if (!systemMailbox) return { messages: [], total: 0 };
 
       // Get sent folder
-      const { data: sentFolder } = await supabase
+      const { data: sentFolder } = await db
         .from('mail_folders')
         .select('id')
         .eq('mailbox_id', systemMailbox.id)
@@ -759,7 +759,7 @@ export const useSystemSentEmails = (page = 1, limit = 50) => {
 
       if (!sentFolder) return { messages: [], total: 0 };
 
-      const { data, error, count } = await supabase
+      const { data, error, count } = await db
         .from('mail_messages')
         .select('*', { count: 'exact' })
         .eq('folder_id', sentFolder.id)
@@ -776,3 +776,4 @@ export const useSystemSentEmails = (page = 1, limit = 50) => {
     enabled: !!systemMailbox,
   });
 };
+

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
@@ -26,7 +26,7 @@ export const useMailbox = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mailboxes')
         .select('*')
         .eq('user_id', user.id)
@@ -52,7 +52,7 @@ export const useCreateMailbox = () => {
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data: mailbox, error } = await supabase
+      const { data: mailbox, error } = await db
         .from('mailboxes')
         .insert({
           user_id: user.id,
@@ -82,7 +82,7 @@ export const useUpdateMailbox = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Mailbox> & { id: string }) => {
-      const { data: mailbox, error } = await supabase
+      const { data: mailbox, error } = await db
         .from('mailboxes')
         .update(data)
         .eq('id', id)
@@ -110,7 +110,7 @@ export const useMailFolders = (mailboxId?: string) => {
     queryFn: async () => {
       if (!mailboxId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_folders')
         .select('*')
         .eq('mailbox_id', mailboxId)
@@ -121,7 +121,7 @@ export const useMailFolders = (mailboxId?: string) => {
       // Get unread counts for each folder
       const folders = data as MailFolder[];
       for (const folder of folders) {
-        const { count } = await supabase
+        const { count } = await db
           .from('mail_messages')
           .select('*', { count: 'exact', head: true })
           .eq('folder_id', folder.id)
@@ -144,7 +144,7 @@ export const useCreateFolder = () => {
     mutationFn: async (data: { mailbox_id: string; name: string; color?: string; icon?: string }) => {
       const slug = data.name.toLowerCase().replace(/\s+/g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       
-      const { data: folder, error } = await supabase
+      const { data: folder, error } = await db
         .from('mail_folders')
         .insert({
           ...data,
@@ -172,7 +172,7 @@ export const useDeleteFolder = () => {
 
   return useMutation({
     mutationFn: async (folderId: string) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_folders')
         .delete()
         .eq('id', folderId)
@@ -208,7 +208,7 @@ export const useMailMessages = (
     queryFn: async () => {
       if (!mailboxId) return { messages: [], total: 0 };
 
-      let query = supabase
+      let query = db
         .from('mail_messages')
         .select('*, mail_attachments(*)', { count: 'exact' })
         .eq('mailbox_id', mailboxId)
@@ -259,7 +259,7 @@ export const useMailMessage = (messageId?: string) => {
     queryFn: async () => {
       if (!messageId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_messages')
         .select('*, mail_attachments(*)')
         .eq('id', messageId)
@@ -269,7 +269,7 @@ export const useMailMessage = (messageId?: string) => {
 
       // Mark as read when opened
       if (data && !data.is_read) {
-        await supabase
+        await db
           .from('mail_messages')
           .update({ is_read: true })
           .eq('id', messageId);
@@ -306,7 +306,7 @@ export const useSendMail = () => {
       };
 
       // Get sent folder
-      const { data: sentFolder } = await supabase
+      const { data: sentFolder } = await db
         .from('mail_folders')
         .select('id')
         .eq('mailbox_id', mailbox.id)
@@ -324,7 +324,7 @@ export const useSendMail = () => {
       const preview = tempDiv.textContent?.substring(0, 200) || '';
 
       // Create the message
-      const { data: message, error } = await supabase
+      const { data: message, error } = await db
         .from('mail_messages')
         .insert({
           mailbox_id: mailbox.id,
@@ -373,7 +373,7 @@ export const useSendMail = () => {
 
 // Helper function to get draft folder id
 const getDraftFolderId = async (mailboxId: string): Promise<string> => {
-  const { data } = await supabase
+  const { data } = await db
     .from('mail_folders')
     .select('id')
     .eq('mailbox_id', mailboxId)
@@ -393,7 +393,7 @@ const deliverMailToRecipients = async (message: MailMessage) => {
 
   for (const recipient of allRecipients) {
     // Find recipient's mailbox
-    const { data: recipientMailbox } = await supabase
+    const { data: recipientMailbox } = await db
       .from('mailboxes')
       .select('id')
       .eq('email_address', recipient.email)
@@ -402,7 +402,7 @@ const deliverMailToRecipients = async (message: MailMessage) => {
 
     if (recipientMailbox) {
       // Get their inbox folder
-      const { data: inboxFolder } = await supabase
+      const { data: inboxFolder } = await db
         .from('mail_folders')
         .select('id')
         .eq('mailbox_id', recipientMailbox.id)
@@ -411,7 +411,7 @@ const deliverMailToRecipients = async (message: MailMessage) => {
 
       if (inboxFolder) {
         // Create a copy in their inbox
-        await supabase.from('mail_messages').insert({
+        await db.from('mail_messages').insert({
           mailbox_id: recipientMailbox.id,
           folder_id: inboxFolder.id,
           message_id: message.message_id,
@@ -440,7 +440,7 @@ export const useUpdateMessage = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<MailMessage> & { id: string }) => {
-      const { data: message, error } = await supabase
+      const { data: message, error } = await db
         .from('mail_messages')
         .update(data)
         .eq('id', id)
@@ -463,7 +463,7 @@ export const useMoveToFolder = () => {
 
   return useMutation({
     mutationFn: async ({ messageIds, folderId }: { messageIds: string[]; folderId: string }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_messages')
         .update({ folder_id: folderId })
         .in('id', messageIds);
@@ -487,13 +487,13 @@ export const useDeleteMessages = () => {
   return useMutation({
     mutationFn: async ({ messageIds, permanent = false }: { messageIds: string[]; permanent?: boolean }) => {
       if (permanent) {
-        const { error } = await supabase
+        const { error } = await db
           .from('mail_messages')
           .delete()
           .in('id', messageIds);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await db
           .from('mail_messages')
           .update({ deleted_at: new Date().toISOString() })
           .in('id', messageIds);
@@ -516,7 +516,7 @@ export const useMarkAsRead = () => {
 
   return useMutation({
     mutationFn: async ({ messageIds, isRead }: { messageIds: string[]; isRead: boolean }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_messages')
         .update({ is_read: isRead })
         .in('id', messageIds);
@@ -535,7 +535,7 @@ export const useToggleStar = () => {
 
   return useMutation({
     mutationFn: async ({ messageId, isStarred }: { messageId: string; isStarred: boolean }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('mail_messages')
         .update({ is_starred: isStarred })
         .eq('id', messageId);
@@ -557,7 +557,7 @@ export const useMailLabels = (mailboxId?: string) => {
     queryFn: async () => {
       if (!mailboxId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_labels')
         .select('*')
         .eq('mailbox_id', mailboxId)
@@ -575,7 +575,7 @@ export const useCreateLabel = () => {
 
   return useMutation({
     mutationFn: async (data: { mailbox_id: string; name: string; color?: string }) => {
-      const { data: label, error } = await supabase
+      const { data: label, error } = await db
         .from('mail_labels')
         .insert(data)
         .select()
@@ -602,7 +602,7 @@ export const useMailContacts = (mailboxId?: string) => {
     queryFn: async () => {
       if (!mailboxId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_contacts')
         .select('*')
         .eq('mailbox_id', mailboxId)
@@ -620,7 +620,7 @@ export const useCreateContact = () => {
 
   return useMutation({
     mutationFn: async (data: { mailbox_id: string; email: string; name?: string }) => {
-      const { data: contact, error } = await supabase
+      const { data: contact, error } = await db
         .from('mail_contacts')
         .insert(data)
         .select()
@@ -659,14 +659,14 @@ export const useMailboxStats = (mailboxId?: string) => {
       };
 
       // Get counts
-      const { count: total } = await supabase
+      const { count: total } = await db
         .from('mail_messages')
         .select('*', { count: 'exact', head: true })
         .eq('mailbox_id', mailboxId)
         .is('deleted_at', null);
       stats.total_messages = total || 0;
 
-      const { count: unread } = await supabase
+      const { count: unread } = await db
         .from('mail_messages')
         .select('*', { count: 'exact', head: true })
         .eq('mailbox_id', mailboxId)
@@ -674,7 +674,7 @@ export const useMailboxStats = (mailboxId?: string) => {
         .is('deleted_at', null);
       stats.unread_count = unread || 0;
 
-      const { count: starred } = await supabase
+      const { count: starred } = await db
         .from('mail_messages')
         .select('*', { count: 'exact', head: true })
         .eq('mailbox_id', mailboxId)
@@ -682,7 +682,7 @@ export const useMailboxStats = (mailboxId?: string) => {
         .is('deleted_at', null);
       stats.starred_count = starred || 0;
 
-      const { count: drafts } = await supabase
+      const { count: drafts } = await db
         .from('mail_messages')
         .select('*', { count: 'exact', head: true })
         .eq('mailbox_id', mailboxId)
@@ -690,7 +690,7 @@ export const useMailboxStats = (mailboxId?: string) => {
         .is('deleted_at', null);
       stats.draft_count = drafts || 0;
 
-      const { count: sent } = await supabase
+      const { count: sent } = await db
         .from('mail_messages')
         .select('*', { count: 'exact', head: true })
         .eq('mailbox_id', mailboxId)
@@ -712,7 +712,7 @@ export const useMailSettings = (mailboxId?: string) => {
     queryFn: async () => {
       if (!mailboxId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('mail_settings')
         .select('*')
         .eq('mailbox_id', mailboxId)
@@ -730,7 +730,7 @@ export const useUpdateMailSettings = () => {
 
   return useMutation({
     mutationFn: async ({ mailbox_id, ...data }: Partial<MailSettings> & { mailbox_id: string }) => {
-      const { data: settings, error } = await supabase
+      const { data: settings, error } = await db
         .from('mail_settings')
         .update(data)
         .eq('mailbox_id', mailbox_id)
@@ -749,3 +749,4 @@ export const useUpdateMailSettings = () => {
     },
   });
 };
+

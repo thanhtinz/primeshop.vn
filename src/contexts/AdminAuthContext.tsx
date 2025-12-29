@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { auth, db, getAccessToken, setAccessToken } from '@/lib/api-client';
+
+interface User {
+  id: string;
+  email: string;
+}
 
 interface AdminAuthContextType {
   user: User | null;
@@ -14,13 +18,12 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAdminStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('admin_users')
         .select('id')
         .eq('user_id', userId)
@@ -38,67 +41,52 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Only synchronous state updates here
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer Supabase calls with setTimeout to prevent deadlocks
-        if (session?.user) {
-          setTimeout(async () => {
-            const adminStatus = await checkAdminStatus(session.user.id);
+    // Check for existing session
+    const initAuth = async () => {
+      try {
+        const token = getAccessToken();
+        if (token) {
+          const userData = await auth.getUser();
+          if (userData) {
+            setUser(userData);
+            const adminStatus = await checkAdminStatus(userData.id);
             setIsAdmin(adminStatus);
-            setIsLoading(false);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-          setIsLoading(false);
+          }
         }
+      } catch (error) {
+        console.error('Admin auth init error:', error);
+        setAccessToken(null);
+      } finally {
+        setIsLoading(false);
       }
-    );
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const adminStatus = await checkAdminStatus(session.user.id);
-        setIsAdmin(adminStatus);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    initAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return { error: error.message };
+      const data = await auth.signIn(email, password);
       
       if (data.user) {
         const adminStatus = await checkAdminStatus(data.user.id);
         if (!adminStatus) {
-          await supabase.auth.signOut();
+          await auth.signOut();
           return { error: 'Bạn không có quyền truy cập Admin Panel' };
         }
         setUser(data.user);
-        setSession(data.session);
         setIsAdmin(true);
       }
       return { error: null };
-    } catch (err) {
+    } catch (err: any) {
       console.error('Sign in error:', err);
-      return { error: 'Đã xảy ra lỗi khi đăng nhập' };
+      return { error: err.message || 'Đã xảy ra lỗi khi đăng nhập' };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     setUser(null);
-    setSession(null);
     setIsAdmin(false);
   };
 

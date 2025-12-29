@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+// All auth now uses MySQL backend
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
@@ -19,6 +20,7 @@ import { DynamicFavicon } from "@/components/DynamicFavicon";
 import { DynamicMeta } from "@/components/DynamicMeta";
 import { IncomingCallNotification } from "@/components/call/VideoCallModal";
 import { OAuthSuccessHandler } from "@/components/OAuthSuccessHandler";
+// All hooks now use MySQL backend
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
