@@ -4,7 +4,7 @@
 
 Dự án e-commerce bán tài khoản game, nạp game và các dịch vụ premium. Xây dựng trên:
 - **Frontend**: React + Vite + TypeScript + TailwindCSS + Shadcn/UI
-- **Backend**: Lovable Cloud (Supabase) - Database, Auth, Edge Functions, Storage
+- **Backend**: Express.js + MySQL + Prisma ORM
 
 ---
 
@@ -21,6 +21,9 @@ cd YOUR_REPO
 
 # Cài đặt dependencies
 npm install
+cd server
+npm install
+cd ..
 ```
 
 ### Bước 2: Cấu Hình Environment
@@ -28,17 +31,25 @@ npm install
 Tạo file `.env` ở thư mục gốc với nội dung:
 
 ```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key_here
-VITE_SUPABASE_PROJECT_ID=your_project_id
+VITE_API_URL=http://localhost:3000
 ```
 
-**Lưu ý**: Thay thế các giá trị bằng thông tin từ Supabase dashboard của bạn.
+Tạo file `.env` trong folder `server`:
+
+```env
+DATABASE_URL="mysql://user:password@localhost:3306/prime_shop"
+JWT_SECRET="your-secret-key-here"
+PORT=3000
+```
 
 ### Bước 3: Chạy Development Server
 
 ```bash
-# Chạy server phát triển
+# Terminal 1: Chạy backend
+cd server
+npm run dev
+
+# Terminal 2: Chạy frontend
 npm run dev
 ```
 
@@ -48,16 +59,12 @@ Mở trình duyệt và truy cập: **http://localhost:5173**
 
 ## 🗄️ Cài Đặt Database
 
-### Bước 1: Chạy Migrations
+### Bước 1: Chạy Prisma Migrations
 
-Migrations nằm trong thư mục `supabase/migrations/`. Bạn cần chạy theo thứ tự timestamp.
-
-**Cách 1: Dùng Supabase CLI**
 ```bash
-# Cài đặt Supabase CLI (nếu chưa có)
-npm install -g supabase
-
-# Đăng nhập Supabase
+cd server
+npx prisma migrate dev
+npx prisma db seed
 supabase login
 
 # Liên kết project

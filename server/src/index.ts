@@ -19,6 +19,7 @@ import orderRoutes from './routes/orders.js';
 import paymentRoutes from './routes/payments.js';
 import uploadRoutes from './routes/upload.js';
 import adminRoutes from './routes/admin.js';
+import adminUsersRoutes from './routes/admin/users.js';
 import webhookRoutes from './routes/webhooks.js';
 import dbRoutes from './routes/db.js';
 import rpcRoutes from './routes/rpc.js';
@@ -94,6 +95,7 @@ app.use('/api/orders', apiLimiter, orderRoutes);
 app.use('/api/payments', paymentLimiter, paymentRoutes); // Strict for payments
 app.use('/api/upload', uploadLimiter, authMiddleware, uploadRoutes); // Limit uploads
 app.use('/api/admin', apiLimiter, adminRoutes);
+app.use('/api/admin/users', apiLimiter, adminUsersRoutes); // Admin user management
 app.use('/api/webhooks', webhookRoutes); // No rate limit for webhooks
 app.use('/api/db', apiLimiter, dbRoutes);
 app.use('/api/rpc', apiLimiter, rpcRoutes);

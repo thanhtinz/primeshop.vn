@@ -68,6 +68,9 @@ const AdminUsers = () => {
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
   const [changingRole, setChangingRole] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>('user');
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({ email: '', password: '', full_name: '', phone: '', role: 'user' });
+  const [createUserLoading, setCreateUserLoading] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -296,6 +299,58 @@ const AdminUsers = () => {
     setInactiveUsers(inactiveList);
   };
 
+  const handleCreateUser = async () => {
+    if (!newUserForm.email || !newUserForm.password || !newUserForm.full_name) {
+      toast.error('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+    if (newUserForm.password.length < 6) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+    
+    setCreateUserLoading(true);
+    try {
+      // Get current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Không có phiên đăng nhập');
+      }
+
+      // Create user via admin API
+      const response = await fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          email: newUserForm.email,
+          password: newUserForm.password,
+          displayName: newUserForm.full_name,
+          phone: newUserForm.phone || undefined,
+          role: newUserForm.role,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Lỗi tạo tài khoản');
+      }
+
+      const { user } = await response.json();
+
+      toast.success('Đã tạo tài khoản thành công');
+      setCreatingUser(false);
+      setNewUserForm({ email: '', password: '', full_name: '', phone: '', role: 'user' });
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Lỗi khi tạo tài khoản');
+    } finally {
+      setCreateUserLoading(false);
+    }
+  };
+
   const handleDeleteInactiveUsers = async () => {
     if (inactiveUsers.length === 0) return;
     setDeletingInactive(true);
@@ -410,6 +465,7 @@ const AdminUsers = () => {
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-base sm:text-xl font-bold truncate">Quản lý người dùng</h1>
         <div className="flex gap-1">
+          <Button variant="default" size="sm" className="h-7 text-xs" onClick={() => setCreatingUser(true)}><Plus className="h-3.5 w-3.5 mr-1" />Tạo user</Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowDeleteInactive(true)}><Clock className="h-3.5 w-3.5" /></Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><Download className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
@@ -733,6 +789,73 @@ const AdminUsers = () => {
             </Select>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setChangingRole(null)}>Hủy</Button><Button onClick={handleChangeRole}>Lưu</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={creatingUser} onOpenChange={setCreatingUser}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tạo tài khoản mới</DialogTitle>
+            <DialogDescription>Tạo tài khoản người dùng mới trong hệ thống</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Email *</Label>
+              <Input 
+                type="email"
+                value={newUserForm.email} 
+                onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})} 
+                placeholder="user@example.com" 
+              />
+            </div>
+            <div>
+              <Label>Mật khẩu *</Label>
+              <Input 
+                type="password"
+                value={newUserForm.password} 
+                onChange={(e) => setNewUserForm({...newUserForm, password: e.target.value})} 
+                placeholder="Tối thiểu 6 ký tự"
+              />
+            </div>
+            <div>
+              <Label>Họ tên *</Label>
+              <Input 
+                value={newUserForm.full_name} 
+                onChange={(e) => setNewUserForm({...newUserForm, full_name: e.target.value})} 
+                placeholder="Nguyễn Văn A" 
+              />
+            </div>
+            <div>
+              <Label>Số điện thoại</Label>
+              <Input 
+                value={newUserForm.phone} 
+                onChange={(e) => setNewUserForm({...newUserForm, phone: e.target.value})} 
+                placeholder="0123456789" 
+              />
+            </div>
+            <div>
+              <Label>Quyền</Label>
+              <Select value={newUserForm.role} onValueChange={(value) => setNewUserForm({...newUserForm, role: value})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="staff">Nhân viên (Chưa hỗ trợ)</SelectItem>
+                  <SelectItem value="admin">Admin (Chưa hỗ trợ)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Hiện tại chỉ tạo được user thường. Admin/Staff sẽ được hỗ trợ sau.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreatingUser(false)} disabled={createUserLoading}>
+              Hủy
+            </Button>
+            <Button onClick={handleCreateUser} disabled={createUserLoading}>
+              {createUserLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Tạo tài khoản
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
