@@ -9,8 +9,8 @@ async function main() {
   // Create admin user
   const adminPasswordHash = await bcrypt.hash('admin123', 10);
   
-  const adminUser = await prisma.adminUser.upsert({
-    where: { username: 'admin' },
+  await prisma.adminUser.upsert({
+    where: { email: 'admin@prime.vn' },
     update: {},
     create: {
       username: 'admin',
@@ -20,38 +20,15 @@ async function main() {
       isActive: true,
     },
   });
-  console.log('✅ Admin user created:', adminUser.username);
-
-  // Create VIP levels
-  const vipLevels = [
-    { name: 'Member', minSpending: 0, discountPercent: 0, sortOrder: 1 },
-    { name: 'Bronze', minSpending: 1000000, discountPercent: 2, sortOrder: 2 },
-    { name: 'Silver', minSpending: 5000000, discountPercent: 5, sortOrder: 3 },
-    { name: 'Gold', minSpending: 15000000, discountPercent: 8, sortOrder: 4 },
-    { name: 'Platinum', minSpending: 30000000, discountPercent: 10, sortOrder: 5 },
-    { name: 'Diamond', minSpending: 50000000, discountPercent: 15, sortOrder: 6 },
-  ];
-
-  for (const level of vipLevels) {
-    await prisma.vipLevel.upsert({
-      where: { id: level.name.toLowerCase() },
-      update: {},
-      create: {
-        id: level.name.toLowerCase(),
-        ...level,
-      },
-    });
-  }
-  console.log('✅ VIP levels created:', vipLevels.length);
+  console.log('✅ Admin user created: admin@prime.vn / admin123');
 
   // Create default categories
   const categories = [
-    { name: 'Game', slug: 'game', description: 'Tài khoản game các loại', icon: '🎮', order: 1 },
-    { name: 'Streaming', slug: 'streaming', description: 'Netflix, Spotify, Youtube Premium...', icon: '📺', order: 2 },
-    { name: 'VPN', slug: 'vpn', description: 'NordVPN, ExpressVPN...', icon: '🔐', order: 3 },
-    { name: 'Phần mềm', slug: 'software', description: 'Windows, Office, Adobe...', icon: '💻', order: 4 },
-    { name: 'Mạng xã hội', slug: 'social', description: 'Facebook, Instagram, TikTok...', icon: '📱', order: 5 },
-    { name: 'Khác', slug: 'other', description: 'Các dịch vụ khác', icon: '📦', order: 6 },
+    { name: 'Game', slug: 'game', description: 'Tài khoản game các loại', iconName: 'Gamepad2', sortOrder: 1 },
+    { name: 'Streaming', slug: 'streaming', description: 'Netflix, Spotify, Youtube Premium...', iconName: 'Play', sortOrder: 2 },
+    { name: 'VPN', slug: 'vpn', description: 'NordVPN, ExpressVPN...', iconName: 'Shield', sortOrder: 3 },
+    { name: 'Phần mềm', slug: 'software', description: 'Windows, Office, Adobe...', iconName: 'Laptop', sortOrder: 4 },
+    { name: 'Mạng xã hội', slug: 'social', description: 'Facebook, Instagram, TikTok...', iconName: 'Share2', sortOrder: 5 },
   ];
 
   for (const cat of categories) {
@@ -63,28 +40,158 @@ async function main() {
   }
   console.log('✅ Categories created:', categories.length);
 
-  // Create site settings
+  // Create sample products
+  const gameCategory = await prisma.category.findUnique({ where: { slug: 'game' } });
+  const streamingCategory = await prisma.category.findUnique({ where: { slug: 'streaming' } });
+  
+  if (gameCategory) {
+    // PUBG Mobile
+    const pubg = await prisma.product.upsert({
+      where: { slug: 'pubg-mobile-uc' },
+      update: {},
+      create: {
+        name: 'PUBG Mobile UC',
+        slug: 'pubg-mobile-uc',
+        description: 'Nạp UC PUBG Mobile giá rẻ, giao dịch nhanh chóng',
+        categoryId: gameCategory.id,
+        imageUrl: 'https://placehold.co/400x300/1a1a2e/eee?text=PUBG+UC',
+        isActive: true,
+        isFeatured: true,
+        sortOrder: 1,
+      },
+    });
+
+    // PUBG packages
+    const pubgPackages = [
+      { productId: pubg.id, name: '60 UC', price: 20000, sortOrder: 1 },
+      { productId: pubg.id, name: '325 UC', price: 99000, sortOrder: 2 },
+      { productId: pubg.id, name: '660 UC', price: 199000, sortOrder: 3 },
+      { productId: pubg.id, name: '1800 UC', price: 499000, sortOrder: 4 },
+    ];
+    for (const pkg of pubgPackages) {
+      await prisma.productPackage.create({ data: pkg }).catch(() => {});
+    }
+
+    // Genshin Impact
+    const genshin = await prisma.product.upsert({
+      where: { slug: 'genshin-impact-genesis' },
+      update: {},
+      create: {
+        name: 'Genshin Impact Genesis Crystals',
+        slug: 'genshin-impact-genesis',
+        description: 'Nạp Genesis Crystals Genshin Impact',
+        categoryId: gameCategory.id,
+        imageUrl: 'https://placehold.co/400x300/3d5a80/eee?text=Genshin',
+        isActive: true,
+        isFeatured: true,
+        sortOrder: 2,
+      },
+    });
+
+    const genshinPackages = [
+      { productId: genshin.id, name: '60 Genesis', price: 22000, sortOrder: 1 },
+      { productId: genshin.id, name: '330 Genesis', price: 110000, sortOrder: 2 },
+      { productId: genshin.id, name: '1090 Genesis', price: 350000, sortOrder: 3 },
+    ];
+    for (const pkg of genshinPackages) {
+      await prisma.productPackage.create({ data: pkg }).catch(() => {});
+    }
+
+    // Free Fire
+    const ff = await prisma.product.upsert({
+      where: { slug: 'free-fire-diamond' },
+      update: {},
+      create: {
+        name: 'Free Fire Diamond',
+        slug: 'free-fire-diamond',
+        description: 'Nạp Kim cương Free Fire giá rẻ',
+        categoryId: gameCategory.id,
+        imageUrl: 'https://placehold.co/400x300/ff6b35/eee?text=Free+Fire',
+        isActive: true,
+        isFeatured: true,
+        sortOrder: 3,
+      },
+    });
+
+    const ffPackages = [
+      { productId: ff.id, name: '100 Kim cương', price: 20000, sortOrder: 1 },
+      { productId: ff.id, name: '310 Kim cương', price: 50000, sortOrder: 2 },
+      { productId: ff.id, name: '520 Kim cương', price: 100000, sortOrder: 3 },
+      { productId: ff.id, name: '1060 Kim cương', price: 200000, sortOrder: 4 },
+    ];
+    for (const pkg of ffPackages) {
+      await prisma.productPackage.create({ data: pkg }).catch(() => {});
+    }
+  }
+
+  if (streamingCategory) {
+    // Netflix
+    const netflix = await prisma.product.upsert({
+      where: { slug: 'netflix-premium' },
+      update: {},
+      create: {
+        name: 'Netflix Premium',
+        slug: 'netflix-premium',
+        description: 'Tài khoản Netflix Premium 4K, chia sẻ hoặc riêng',
+        categoryId: streamingCategory.id,
+        imageUrl: 'https://placehold.co/400x300/e50914/fff?text=Netflix',
+        isActive: true,
+        isFeatured: true,
+        sortOrder: 1,
+      },
+    });
+
+    const netflixPackages = [
+      { productId: netflix.id, name: '1 tháng (chia sẻ)', price: 35000, sortOrder: 1 },
+      { productId: netflix.id, name: '1 tháng (riêng)', price: 120000, sortOrder: 2 },
+      { productId: netflix.id, name: '3 tháng (riêng)', price: 320000, sortOrder: 3 },
+    ];
+    for (const pkg of netflixPackages) {
+      await prisma.productPackage.create({ data: pkg }).catch(() => {});
+    }
+
+    // Spotify
+    const spotify = await prisma.product.upsert({
+      where: { slug: 'spotify-premium' },
+      update: {},
+      create: {
+        name: 'Spotify Premium',
+        slug: 'spotify-premium',
+        description: 'Tài khoản Spotify Premium không quảng cáo',
+        categoryId: streamingCategory.id,
+        imageUrl: 'https://placehold.co/400x300/1db954/fff?text=Spotify',
+        isActive: true,
+        isFeatured: false,
+        sortOrder: 2,
+      },
+    });
+
+    const spotifyPackages = [
+      { productId: spotify.id, name: '1 tháng', price: 25000, sortOrder: 1 },
+      { productId: spotify.id, name: '3 tháng', price: 65000, sortOrder: 2 },
+      { productId: spotify.id, name: '6 tháng', price: 120000, sortOrder: 3 },
+    ];
+    for (const pkg of spotifyPackages) {
+      await prisma.productPackage.create({ data: pkg }).catch(() => {});
+    }
+  }
+
+  // Site settings
   const settings = [
-    { key: 'site_name', value: 'Prime Shop', group: 'general' },
-    { key: 'site_description', value: 'Cửa hàng tài khoản số 1 Việt Nam', group: 'general' },
-    { key: 'contact_email', value: 'support@prime.vn', group: 'contact' },
-    { key: 'contact_phone', value: '0123456789', group: 'contact' },
-    { key: 'facebook_url', value: 'https://facebook.com/primeshop', group: 'social' },
-    { key: 'zalo_url', value: 'https://zalo.me/primeshop', group: 'social' },
-    { key: 'telegram_url', value: 'https://t.me/primeshop', group: 'social' },
-    { key: 'maintenance_mode', value: 'false', group: 'system' },
-    { key: 'min_deposit_amount', value: '10000', group: 'payment' },
-    { key: 'max_deposit_amount', value: '50000000', group: 'payment' },
+    { key: 'site_name', value: 'Prime Shop' },
+    { key: 'site_description', value: 'Cửa hàng tài khoản số 1 Việt Nam' },
+    { key: 'contact_email', value: 'support@prime.vn' },
+    { key: 'contact_phone', value: '0123456789' },
   ];
 
   for (const setting of settings) {
     await prisma.siteSetting.upsert({
       where: { key: setting.key },
-      update: {},
+      update: { value: setting.value },
       create: setting,
     });
   }
-  console.log('✅ Site settings created:', settings.length);
+  console.log('✅ Site settings created');
 
   // Create sample voucher
   await prisma.voucher.upsert({
@@ -92,73 +199,15 @@ async function main() {
     update: {},
     create: {
       code: 'WELCOME10',
-      description: 'Giảm 10% cho đơn hàng đầu tiên',
       discountType: 'percentage',
       discountValue: 10,
       maxDiscount: 50000,
-      minOrderAmount: 100000,
-      maxUses: 1000,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+      minOrderValue: 100000,
+      usageLimit: 1000,
       isActive: true,
     },
   });
   console.log('✅ Welcome voucher created');
-
-  // Create email templates
-  const emailTemplates = [
-    {
-      name: 'order_confirmation',
-      subject: 'Xác nhận đơn hàng #{{orderNumber}}',
-      bodyHtml: `
-        <h1>Cảm ơn bạn đã đặt hàng!</h1>
-        <p>Đơn hàng <strong>#{{orderNumber}}</strong> của bạn đã được tiếp nhận.</p>
-        <p>Tổng tiền: <strong>{{totalAmount}}</strong></p>
-        <p>Chúng tôi sẽ xử lý đơn hàng trong thời gian sớm nhất.</p>
-      `,
-      variables: ['orderNumber', 'totalAmount'],
-    },
-    {
-      name: 'order_completed',
-      subject: 'Đơn hàng #{{orderNumber}} đã hoàn thành',
-      bodyHtml: `
-        <h1>Đơn hàng đã hoàn thành!</h1>
-        <p>Đơn hàng <strong>#{{orderNumber}}</strong> của bạn đã được giao thành công.</p>
-        <p>Cảm ơn bạn đã mua sắm tại Prime Shop!</p>
-      `,
-      variables: ['orderNumber'],
-    },
-    {
-      name: 'deposit_success',
-      subject: 'Nạp tiền thành công',
-      bodyHtml: `
-        <h1>Nạp tiền thành công!</h1>
-        <p>Bạn đã nạp thành công <strong>{{amount}}</strong> vào tài khoản.</p>
-        <p>Số dư hiện tại: <strong>{{balance}}</strong></p>
-      `,
-      variables: ['amount', 'balance'],
-    },
-    {
-      name: 'password_reset',
-      subject: 'Đặt lại mật khẩu',
-      bodyHtml: `
-        <h1>Đặt lại mật khẩu</h1>
-        <p>Bạn đã yêu cầu đặt lại mật khẩu. Click vào link bên dưới để tiếp tục:</p>
-        <p><a href="{{resetLink}}">Đặt lại mật khẩu</a></p>
-        <p>Link này sẽ hết hạn sau 24 giờ.</p>
-      `,
-      variables: ['resetLink'],
-    },
-  ];
-
-  for (const template of emailTemplates) {
-    await prisma.emailTemplate.upsert({
-      where: { name: template.name },
-      update: {},
-      create: template,
-    });
-  }
-  console.log('✅ Email templates created:', emailTemplates.length);
 
   console.log('🎉 Database seed completed!');
 }

@@ -454,3 +454,77 @@ export const useSearchProducts = (query: string) => {
     enabled: query.length >= 2,
   });
 };
+
+// Alias exports for backward compatibility
+export const useCreatePackage = useCreateProductPackage;
+export const useUpdatePackage = useUpdateProductPackage;
+export const useDeletePackage = useDeleteProductPackage;
+
+// Custom field mutations
+export const useCreateCustomField = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (field: Partial<DbProductCustomField>) => {
+      const { data, error } = await db
+        .from<DbProductCustomField>('product_custom_fields')
+        .insert({
+          productId: field.productId || field.product_id || '',
+          fieldName: field.fieldName || field.field_name || '',
+          fieldType: field.fieldType || field.field_type || 'text',
+          isRequired: field.isRequired ?? field.is_required ?? false,
+          placeholder: field.placeholder,
+          options: field.options,
+          order: field.order ?? field.sort_order ?? 0,
+        })
+        .select('*')
+        .single();
+      if (error) throw error;
+      return mapCustomFieldToLegacy(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+  });
+};
+
+export const useUpdateCustomField = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<DbProductCustomField> & { id: string }) => {
+      const updateData: any = {};
+      if (updates.fieldName !== undefined || updates.field_name !== undefined) {
+        updateData.fieldName = updates.fieldName || updates.field_name;
+      }
+      if (updates.fieldType !== undefined || updates.field_type !== undefined) {
+        updateData.fieldType = updates.fieldType || updates.field_type;
+      }
+      if (updates.isRequired !== undefined || updates.is_required !== undefined) {
+        updateData.isRequired = updates.isRequired ?? updates.is_required;
+      }
+      if (updates.placeholder !== undefined) updateData.placeholder = updates.placeholder;
+      if (updates.options !== undefined) updateData.options = updates.options;
+      if (updates.order !== undefined || updates.sort_order !== undefined) {
+        updateData.order = updates.order ?? updates.sort_order;
+      }
+
+      const { data, error } = await db
+        .from<DbProductCustomField>('product_custom_fields')
+        .update(updateData)
+        .eq('id', id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return mapCustomFieldToLegacy(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+  });
+};
+
+export const useDeleteCustomField = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db.from('product_custom_fields').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+  });
+};

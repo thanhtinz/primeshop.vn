@@ -468,3 +468,59 @@ export const useMyBids = () => {
     enabled: !!user?.id
   });
 };
+
+// Get seller's auctions
+export const useSellerAuctions = (sellerId?: string) => {
+  return useQuery({
+    queryKey: ['seller-auctions', sellerId],
+    queryFn: async () => {
+      if (!sellerId) return [];
+      const { data, error } = await db
+        .from<any>('auctions')
+        .select('*, product:products(*)')
+        .eq('sellerId', sellerId)
+        .order('createdAt', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapAuctionToLegacy);
+    },
+    enabled: !!sellerId,
+  });
+};
+
+// Watch auction
+export const useWatchAuction = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ auctionId, userId }: { auctionId: string; userId: string }) => {
+      const { data, error } = await db
+        .from('auction_watchers')
+        .insert({ auctionId, userId })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auction-watchers'] });
+      toast.success('Đã thêm vào danh sách theo dõi');
+    },
+  });
+};
+
+// Check if user is watching auction
+export const useIsWatching = (auctionId: string, userId?: string) => {
+  return useQuery({
+    queryKey: ['auction-watching', auctionId, userId],
+    queryFn: async () => {
+      if (!userId) return false;
+      const { data } = await db
+        .from('auction_watchers')
+        .select('id')
+        .eq('auctionId', auctionId)
+        .eq('userId', userId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!userId && !!auctionId,
+  });
+};

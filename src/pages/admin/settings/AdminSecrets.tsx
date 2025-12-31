@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSiteSettings, useUpdateMultipleSiteSettings } from '@/hooks/useSiteSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -15,7 +13,6 @@ import {
   EyeOff,
   Save,
   RefreshCw,
-  Key,
   Shield,
   CreditCard,
   Mail,
@@ -99,17 +96,39 @@ const secretGroups: SecretGroup[] = [
     ],
   },
   {
-    id: 'payment',
+    id: 'payos',
     icon: CreditCard,
-    title: 'Payment Gateways',
-    description: 'PayOS và PayPal',
+    title: 'PayOS (VND)',
+    description: 'Cổng thanh toán VND trong nước',
+    docsUrl: 'https://payos.vn/docs',
     fields: [
-      { key: 'PAYOS_CLIENT_ID', label: 'PayOS Client ID', type: 'text', required: true },
-      { key: 'PAYOS_API_KEY', label: 'PayOS API Key', type: 'password', required: true },
-      { key: 'PAYOS_CHECKSUM_KEY', label: 'PayOS Checksum Key', type: 'password', required: true },
-      { key: 'PAYPAL_CLIENT_ID', label: 'PayPal Client ID', type: 'text' },
-      { key: 'PAYPAL_CLIENT_SECRET', label: 'PayPal Secret', type: 'password' },
-      { key: 'PAYPAL_MODE', label: 'PayPal Mode', type: 'text', placeholder: 'sandbox | live' },
+      { key: 'PAYOS_CLIENT_ID', label: 'Client ID', type: 'text', required: true },
+      { key: 'PAYOS_API_KEY', label: 'API Key', type: 'password', required: true },
+      { key: 'PAYOS_CHECKSUM_KEY', label: 'Checksum Key', type: 'password', required: true },
+    ],
+  },
+  {
+    id: 'paypal',
+    icon: CreditCard,
+    title: 'PayPal (USD)',
+    description: 'Thanh toán quốc tế bằng USD',
+    docsUrl: 'https://developer.paypal.com/docs',
+    fields: [
+      { key: 'PAYPAL_CLIENT_ID', label: 'Client ID', type: 'text' },
+      { key: 'PAYPAL_CLIENT_SECRET', label: 'Client Secret', type: 'password' },
+      { key: 'PAYPAL_MODE', label: 'Mode (sandbox/live)', type: 'text', placeholder: 'sandbox' },
+    ],
+  },
+  {
+    id: 'usdt',
+    icon: CreditCard,
+    title: 'USDT (Crypto)',
+    description: 'Thanh toán bằng tiền điện tử USDT',
+    docsUrl: 'https://fpayment.net/',
+    fields: [
+      { key: 'FPAYMENT_ENABLED', label: 'Bật USDT (true/false)', type: 'text', placeholder: 'false' },
+      { key: 'FPAYMENT_API_KEY', label: 'API Key', type: 'password' },
+      { key: 'FPAYMENT_MERCHANT_ID', label: 'Merchant ID', type: 'text' },
     ],
   },
   {
@@ -145,16 +164,6 @@ const secretGroups: SecretGroup[] = [
     ],
   },
   {
-    id: 'smm',
-    icon: Globe,
-    title: 'SMM Panel API',
-    description: 'API dịch vụ SMM',
-    fields: [
-      { key: 'SMM_API_URL', label: 'API URL', type: 'url', placeholder: 'https://smmpanel.com/api/v2' },
-      { key: 'SMM_API_KEY', label: 'API Key', type: 'password', required: true },
-    ],
-  },
-  {
     id: 'storage',
     icon: Database,
     title: 'Cloud Storage',
@@ -170,29 +179,42 @@ const secretGroups: SecretGroup[] = [
   },
 ];
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 const AdminSecrets = () => {
   const { t } = useLanguage();
-  const { data: settings, isLoading, refetch } = useSiteSettings();
-  const updateSettings = useUpdateMultipleSiteSettings();
   
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('database');
 
+  // Fetch secrets from server .env file
   useEffect(() => {
-    if (settings) {
-      // Load secrets from settings (stored with prefix 'secret_')
-      const loadedSecrets: Record<string, string> = {};
-      secretGroups.forEach(group => {
-        group.fields.forEach(field => {
-          const settingKey = `secret_${field.key.toLowerCase()}`;
-          loadedSecrets[field.key] = settings[settingKey] || '';
+    const fetchSecrets = async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        const response = await fetch(`${API_URL}/admin/secrets`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         });
-      });
-      setSecrets(loadedSecrets);
-    }
-  }, [settings]);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSecrets(data.secrets || {});
+        }
+      } catch (error) {
+        console.error('Failed to load secrets:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSecrets();
+  }, []);
 
   const handleChange = (key: string, value: string) => {
     setSecrets(prev => ({ ...prev, [key]: value }));
@@ -209,18 +231,29 @@ const AdminSecrets = () => {
   };
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
-      // Convert to settings format
-      const settingsData: Record<string, string> = {};
-      Object.entries(secrets).forEach(([key, value]) => {
-        settingsData[`secret_${key.toLowerCase()}`] = value;
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${API_URL}/admin/secrets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ secrets }),
       });
       
-      await updateSettings.mutateAsync(settingsData);
-      toast.success(t('admin.secretsSaved') || 'Đã lưu cấu hình!');
+      if (!response.ok) {
+        throw new Error('Failed to save secrets');
+      }
+      
+      const data = await response.json();
+      toast.success(data.message || t('admin.secretsSaved') || 'Đã lưu và áp dụng cấu hình!');
       setHasChanges(false);
     } catch (error: any) {
       toast.error(error.message || 'Có lỗi xảy ra');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -261,10 +294,10 @@ const AdminSecrets = () => {
         
         <Button
           onClick={handleSave}
-          disabled={!hasChanges || updateSettings.isPending}
+          disabled={!hasChanges || isSaving}
           className="gap-2"
         >
-          {updateSettings.isPending ? (
+          {isSaving ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
           ) : (
             <Save className="w-4 h-4" />
@@ -280,29 +313,6 @@ const AdminSecrets = () => {
           {t('admin.secretsWarning') || 'Cảnh báo: Không chia sẻ các thông tin này với bất kỳ ai. Các secrets được mã hóa khi lưu trữ.'}
         </AlertDescription>
       </Alert>
-
-      {/* Status Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {secretGroups.slice(0, 5).map(group => {
-          const status = getGroupStatus(group);
-          return (
-            <button
-              key={group.id}
-              onClick={() => setActiveTab(group.id)}
-              className={cn(
-                'p-3 rounded-lg border text-left transition-all',
-                activeTab === group.id ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
-              )}
-            >
-              <group.icon className={cn('w-5 h-5 mb-2', activeTab === group.id && 'text-primary')} />
-              <p className="font-medium text-sm truncate">{group.title}</p>
-              <Badge variant="secondary" className={cn('mt-1 text-[10px]', status.color)}>
-                {status.label}
-              </Badge>
-            </button>
-          );
-        })}
-      </div>
 
       {/* Tabs Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

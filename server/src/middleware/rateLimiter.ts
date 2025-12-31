@@ -2,6 +2,8 @@ import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { Request, Response } from 'express';
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 // In-memory store for development (use Redis in production)
 export const createRateLimiter = (options: {
   windowMs: number;
@@ -11,13 +13,14 @@ export const createRateLimiter = (options: {
 }) => {
   return rateLimit({
     windowMs: options.windowMs,
-    max: options.max,
+    max: isDevelopment ? 10000 : options.max, // High limit for development
     message: options.message || 'Too many requests from this IP, please try again later.',
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     skipSuccessfulRequests: options.skipSuccessfulRequests || false,
-    // Skip rate limiting for admin users
+    // Skip rate limiting for admin users or in development
     skip: (req: Request) => {
+      if (isDevelopment) return true; // Skip rate limiting in development
       const user = (req as any).user;
       return user?.role === 'ADMIN';
     },

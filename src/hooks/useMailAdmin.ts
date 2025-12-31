@@ -68,13 +68,13 @@ export const usePublicDomains = () => {
     queryFn: async () => {
       const { data, error } = await db
         .from('mail_domains')
-        .select('id, domain, display_name, max_storage_mb, max_message_size_mb')
+        .select('id, domain, display_name, max_storage_mb, max_message_size_mb, is_default')
         .eq('is_active', true)
         .eq('is_public', true)
         .order('is_default', { ascending: false });
 
       if (error) throw error;
-      return data as Pick<MailDomain, 'id' | 'domain' | 'display_name' | 'max_storage_mb' | 'max_message_size_mb'>[];
+      return data as Pick<MailDomain, 'id' | 'domain' | 'display_name' | 'max_storage_mb' | 'max_message_size_mb' | 'is_default'>[];
     },
   });
 };

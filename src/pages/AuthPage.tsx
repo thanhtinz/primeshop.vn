@@ -23,13 +23,17 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const TURNSTILE_SITE_KEY = '0x4AAAAAACHeVNTAamAr7dFd';
+const DEFAULT_TURNSTILE_SITE_KEY = '0x4AAAAAACHeVNTAamAr7dFd';
 
 const AuthPage = () => {
   const { t } = useLanguage();
   const { data: settings } = useSiteSettings();
   
   const googleEnabled = settings?.google_login_enabled !== false;
+  // Captcha mặc định tắt, chỉ bật khi admin cấu hình captcha_enabled = true
+  const captchaEnabled = settings?.captcha_enabled === true;
+  const captchaSiteKey = settings?.captcha_site_key || DEFAULT_TURNSTILE_SITE_KEY;
+  const captchaMode = settings?.captcha_mode || 'always';
   
   const loginSchema = z.object({
     email: z.string().email(t('emailInvalid')),
@@ -96,6 +100,14 @@ const AuthPage = () => {
     }
   };
 
+  // Check if captcha should be shown for current mode
+  const shouldShowCaptcha = captchaEnabled && (
+    captchaMode === 'always' || 
+    (captchaMode === 'login_only' && activeTab === 'login') ||
+    (captchaMode === 'signup_only' && activeTab === 'signup') ||
+    captchaMode === 'suspicious'
+  );
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -115,17 +127,22 @@ const AuthPage = () => {
       }
     }
 
-    if (!captchaToken) {
-      toast.error(t('pleaseCompleteCaptcha') || 'Vui lòng hoàn thành captcha');
-      return;
-    }
+    // Only validate captcha if enabled and should show for login
+    const needsCaptcha = captchaEnabled && (captchaMode === 'always' || captchaMode === 'login_only' || captchaMode === 'suspicious');
+    
+    if (needsCaptcha) {
+      if (!captchaToken) {
+        toast.error(t('pleaseCompleteCaptcha') || 'Vui lòng hoàn thành captcha');
+        return;
+      }
 
-    const isValidCaptcha = await verifyCaptcha(captchaToken);
-    if (!isValidCaptcha) {
-      toast.error(t('captchaFailed') || 'Xác thực captcha thất bại');
-      turnstileRef.current?.reset();
-      setCaptchaToken(null);
-      return;
+      const isValidCaptcha = await verifyCaptcha(captchaToken);
+      if (!isValidCaptcha) {
+        toast.error(t('captchaFailed') || 'Xác thực captcha thất bại');
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+        return;
+      }
     }
     
     setIsLoading(true);
@@ -133,8 +150,10 @@ const AuthPage = () => {
     
     if (error) {
       toast.error(error);
-      turnstileRef.current?.reset();
-      setCaptchaToken(null);
+      if (needsCaptcha) {
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+      }
     } else {
       toast.success(t('loginSuccess'));
       // Delay navigation to ensure toast is visible
@@ -164,12 +183,34 @@ const AuthPage = () => {
         return;
       }
     }
+
+    // Only validate captcha if enabled and should show for signup
+    const needsCaptcha = captchaEnabled && (captchaMode === 'always' || captchaMode === 'signup_only' || captchaMode === 'suspicious');
+    
+    if (needsCaptcha) {
+      if (!captchaToken) {
+        toast.error(t('pleaseCompleteCaptcha') || 'Vui lòng hoàn thành captcha');
+        return;
+      }
+
+      const isValidCaptcha = await verifyCaptcha(captchaToken);
+      if (!isValidCaptcha) {
+        toast.error(t('captchaFailed') || 'Xác thực captcha thất bại');
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+        return;
+      }
+    }
     
     setIsLoading(true);
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
       toast.error(error);
+      if (needsCaptcha) {
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+      }
     } else {
       setSignupSuccess(true);
     }
@@ -374,25 +415,27 @@ const AuthPage = () => {
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
 
-                <div className="flex justify-center">
-                  <Turnstile
-                    ref={turnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setCaptchaToken(token)}
-                    onError={() => {
-                      setCaptchaToken(null);
-                      // Don't show toast on widget error - just disable submit
-                      console.warn('Turnstile widget error - captcha token cleared');
-                    }}
-                    onExpire={() => setCaptchaToken(null)}
-                    options={{ theme: 'auto', size: 'normal' }}
-                  />
-                </div>
+                {shouldShowCaptcha && (captchaMode === 'always' || captchaMode === 'login_only' || captchaMode === 'suspicious') && (
+                  <div className="flex justify-center">
+                    <Turnstile
+                      ref={turnstileRef}
+                      siteKey={captchaSiteKey}
+                      onSuccess={(token) => setCaptchaToken(token)}
+                      onError={() => {
+                        setCaptchaToken(null);
+                        // Don't show toast on widget error - just disable submit
+                        console.warn('Turnstile widget error - captcha token cleared');
+                      }}
+                      onExpire={() => setCaptchaToken(null)}
+                      options={{ theme: 'auto', size: 'normal' }}
+                    />
+                  </div>
+                )}
                 
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-base gap-2" 
-                  disabled={isLoading || !captchaToken}
+                  disabled={isLoading || (shouldShowCaptcha && (captchaMode === 'always' || captchaMode === 'login_only' || captchaMode === 'suspicious') && !captchaToken)}
                 >
                   {isLoading ? (
                     <>
@@ -473,11 +516,27 @@ const AuthPage = () => {
                   </div>
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
+
+                {shouldShowCaptcha && (captchaMode === 'always' || captchaMode === 'signup_only' || captchaMode === 'suspicious') && (
+                  <div className="flex justify-center">
+                    <Turnstile
+                      ref={turnstileRef}
+                      siteKey={captchaSiteKey}
+                      onSuccess={(token) => setCaptchaToken(token)}
+                      onError={() => {
+                        setCaptchaToken(null);
+                        console.warn('Turnstile widget error - captcha token cleared');
+                      }}
+                      onExpire={() => setCaptchaToken(null)}
+                      options={{ theme: 'auto', size: 'normal' }}
+                    />
+                  </div>
+                )}
                 
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-base gap-2" 
-                  disabled={isLoading}
+                  disabled={isLoading || (shouldShowCaptcha && (captchaMode === 'always' || captchaMode === 'signup_only' || captchaMode === 'suspicious') && !captchaToken)}
                 >
                   {isLoading ? (
                     <>

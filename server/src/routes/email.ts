@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 import { 
   sendEmail, 
   sendRawEmail, 
@@ -7,13 +7,13 @@ import {
   testEmailConnection,
   resetTransporter,
   EmailTemplate 
-} from '../services/emailService';
-import { prisma } from '../lib/prisma';
+} from '../services/emailService.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 
 // Send templated email
-router.post('/send', authenticateToken, async (req: Request, res: Response) => {
+router.post('/send', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { template, recipient, data, lang } = req.body;
 
@@ -37,7 +37,7 @@ router.post('/send', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Send direct email (no template)
-router.post('/send-direct', authenticateToken, async (req: Request, res: Response) => {
+router.post('/send-direct', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { recipient, subject, html, text } = req.body;
 
@@ -61,7 +61,7 @@ router.post('/send-direct', authenticateToken, async (req: Request, res: Respons
 });
 
 // Send bulk email (admin only)
-router.post('/send-bulk', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.post('/send-bulk', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { recipients, subject, html, text } = req.body;
 
@@ -80,7 +80,7 @@ router.post('/send-bulk', authenticateToken, requireAdmin, async (req: Request, 
 });
 
 // Test email connection (admin only)
-router.post('/test', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.post('/test', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const result = await testEmailConnection();
     res.json(result);
@@ -90,7 +90,7 @@ router.post('/test', authenticateToken, requireAdmin, async (req: Request, res: 
 });
 
 // Reset email transporter (when config changes)
-router.post('/reset', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.post('/reset', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     resetTransporter();
     res.json({ success: true, message: 'Email transporter reset' });
@@ -100,7 +100,7 @@ router.post('/reset', authenticateToken, requireAdmin, async (req: Request, res:
 });
 
 // Get email templates (admin only)
-router.get('/templates', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.get('/templates', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { language } = req.query;
     
@@ -119,7 +119,7 @@ router.get('/templates', authenticateToken, requireAdmin, async (req: Request, r
 });
 
 // Create/Update email template
-router.post('/templates', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.post('/templates', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { id, name, language, subject, html_content, text_content, is_active } = req.body;
 
@@ -148,7 +148,7 @@ router.post('/templates', authenticateToken, requireAdmin, async (req: Request, 
 });
 
 // Delete email template
-router.delete('/templates/:id', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.delete('/templates/:id', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -160,7 +160,7 @@ router.delete('/templates/:id', authenticateToken, requireAdmin, async (req: Req
 });
 
 // Get email logs (admin only)
-router.get('/logs', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.get('/logs', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 50, status, recipient } = req.query;
     const skip = (Number(page) - 1) * Number(limit);

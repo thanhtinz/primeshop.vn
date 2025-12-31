@@ -1,10 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken, TokenPayload } from '../lib/auth.js';
+import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma.js';
 
-export interface AuthRequest extends Request {
-  user?: TokenPayload & { isAdmin?: boolean };
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+export interface TokenPayload {
+  userId: string;
+  email: string;
+  isAdmin?: boolean;
+  role?: string;
 }
+
+export interface AuthRequest extends Request {
+  user?: TokenPayload;
+}
+
+// Verify token manually để handle cả admin và user tokens
+const verifyToken = (token: string): TokenPayload | null => {
+  try {
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+  } catch {
+    return null;
+  }
+};
 
 export const authMiddleware = async (
   req: AuthRequest, 
@@ -19,13 +37,32 @@ export const authMiddleware = async (
     }
 
     const token = authHeader.substring(7);
-    const payload = verifyAccessToken(token);
+    const payload = verifyToken(token);
 
     if (!payload) {
       return res.status(401).json({ error: 'Unauthorized - Invalid token' });
     }
 
-    // Check if user exists and is not banned
+    // Nếu là admin token (có isAdmin: true)
+    if (payload.isAdmin) {
+      const admin = await prisma.adminUser.findUnique({
+        where: { id: payload.userId },
+        select: { id: true, email: true, isActive: true },
+      });
+
+      if (!admin) {
+        return res.status(401).json({ error: 'Unauthorized - Admin not found' });
+      }
+
+      if (!admin.isActive) {
+        return res.status(403).json({ error: 'Admin account is disabled' });
+      }
+
+      req.user = payload;
+      return next();
+    }
+
+    // Normal user token
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, email: true, isBanned: true },
@@ -57,7 +94,7 @@ export const optionalAuthMiddleware = async (
     
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const payload = verifyAccessToken(token);
+      const payload = verifyToken(token);
       if (payload) {
         req.user = payload;
       }
@@ -79,6 +116,12 @@ export const adminMiddleware = async (
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Nếu token đã có isAdmin: true thì đã được verify ở authMiddleware
+    if (req.user.isAdmin) {
+      return next();
+    }
+
+    // Fallback: check trong database (cho normal user xem có phải admin không)
     const adminUser = await prisma.adminUser.findUnique({
       where: { userId: req.user.userId },
     });

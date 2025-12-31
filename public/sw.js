@@ -1,16 +1,30 @@
+// Service Worker disabled for development
+// Uncomment below for production
+
 const CACHE_NAME = 'gameshop-v2';
 const STATIC_CACHE = 'gameshop-static-v2';
 const DYNAMIC_CACHE = 'gameshop-dynamic-v2';
 
-// Static assets to cache - exclude favicon as it's dynamic from database
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+// In development, skip all caching
+if (location.hostname === 'localhost') {
+  self.addEventListener('install', () => self.skipWaiting());
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    );
+  });
+  self.addEventListener('fetch', () => {}); // Don't cache in dev
+} else {
+  // Production code below
+  // Static assets to cache - exclude favicon as it's dynamic from database
+  const STATIC_ASSETS = [
+    '/',
+    '/index.html',
+    '/manifest.json'
+  ];
 
-// Patterns to skip caching
-const SKIP_CACHE_PATTERNS = [/favicon/i, /site-assets/i];
+  // Patterns to skip caching
+  const SKIP_CACHE_PATTERNS = [/favicon/i, /site-assets/i];
 
 // Install event
 self.addEventListener('install', (event) => {

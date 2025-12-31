@@ -1,13 +1,150 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import prisma from '../lib/prisma.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-// All admin routes require authentication + admin role
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// ============ ADMIN LOGIN (No auth required) ============
+
+const adminLoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+router.post('/login', asyncHandler(async (req, res) => {
+  const { email, password } = adminLoginSchema.parse(req.body);
+
+  // Find admin user
+  const admin = await prisma.adminUser.findUnique({ 
+    where: { email },
+  });
+
+  if (!admin) {
+    return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
+  }
+
+  if (!admin.isActive) {
+    return res.status(403).json({ error: 'Tài khoản admin đã bị vô hiệu hóa' });
+  }
+
+  // Verify password
+  const isValid = await bcrypt.compare(password, admin.passwordHash);
+  if (!isValid) {
+    return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
+  }
+
+  // Generate token
+  const accessToken = jwt.sign(
+    { 
+      userId: admin.id, 
+      email: admin.email, 
+      role: admin.role,
+      isAdmin: true 
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  res.json({
+    user: {
+      id: admin.id,
+      email: admin.email,
+      username: admin.username,
+      role: admin.role,
+    },
+    accessToken,
+  });
+}));
+
+// All other admin routes require authentication + admin role
 router.use(authMiddleware, adminMiddleware);
+
+// ============ ENV/SECRETS MANAGEMENT ============
+
+// Get current .env values (masked for security)
+router.get('/secrets', asyncHandler(async (req, res) => {
+  const envPath = path.resolve(process.cwd(), '.env');
+  
+  if (!fs.existsSync(envPath)) {
+    return res.json({ secrets: {} });
+  }
+  
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  const secrets: Record<string, string> = {};
+  
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key) {
+        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+        secrets[key] = value;
+      }
+    }
+  });
+  
+  res.json({ secrets });
+}));
+
+// Update .env file
+router.post('/secrets', asyncHandler(async (req, res) => {
+  const schema = z.object({
+    secrets: z.record(z.string()),
+  });
+  
+  const { secrets } = schema.parse(req.body);
+  const envPath = path.resolve(process.cwd(), '.env');
+  
+  // Read existing .env if exists
+  let existingEnv: Record<string, string> = {};
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        if (key) {
+          existingEnv[key] = valueParts.join('=').replace(/^["']|["']$/g, '');
+        }
+      }
+    });
+  }
+  
+  // Merge with new secrets (only update non-empty values)
+  Object.entries(secrets).forEach(([key, value]) => {
+    if (value && value.trim()) {
+      existingEnv[key] = value;
+      // Also update process.env for immediate effect
+      process.env[key] = value;
+    }
+  });
+  
+  // Write back to .env
+  const envContent = Object.entries(existingEnv)
+    .map(([key, value]) => {
+      // Quote values with spaces or special chars
+      if (value.includes(' ') || value.includes('#')) {
+        return `${key}="${value}"`;
+      }
+      return `${key}=${value}`;
+    })
+    .join('\n');
+  
+  fs.writeFileSync(envPath, envContent + '\n');
+  
+  res.json({ 
+    success: true, 
+    message: 'Cấu hình đã được lưu và áp dụng ngay lập tức' 
+  });
+}));
 
 // ============ CATEGORIES ============
 

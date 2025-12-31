@@ -1,20 +1,18 @@
 import express from 'express';
-import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
-import { db } from '../lib/api-client.js';
-import { discordService } from '../services/discordService.js';
+import { authMiddleware, adminMiddleware } from '../../middleware/auth.js';
+import prisma from '../../lib/prisma.js';
+import { discordService } from '../../services/discordService.js';
 
 const router = express.Router();
 
 // Get Discord bot configuration (admin only)
 router.get('/config', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { data: settings } = await db
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'discord_bot_config')
-      .single();
+    const settings = await prisma.siteSetting.findUnique({
+      where: { key: 'discord_bot_config' }
+    });
 
-    const config = settings?.value ? JSON.parse(settings.value) : {
+    const config = settings?.value ? (settings.value as any) : {
       token: '',
       clientId: '',
       notificationChannelId: '',
@@ -37,15 +35,11 @@ router.put('/config', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const config = req.body;
 
-    const { error } = await db
-      .from('site_settings')
-      .upsert({
-        key: 'discord_bot_config',
-        value: JSON.stringify(config),
-        updatedAt: new Date().toISOString(),
-      });
-
-    if (error) throw error;
+    await prisma.siteSetting.upsert({
+      where: { key: 'discord_bot_config' },
+      update: { value: config },
+      create: { key: 'discord_bot_config', value: config }
+    });
 
     // Restart Discord bot with new config
     await discordService.disconnect();

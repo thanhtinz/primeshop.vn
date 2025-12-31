@@ -35,7 +35,17 @@ INSERT INTO `site_settings` (`id`, `key`, `value`) VALUES
   (UUID(), 'seasonal_effect_count', '50'),
   (UUID(), 'seasonal_effect_speed', '1'),
   (UUID(), 'naperis_api_key', '""'),
-  (UUID(), 'naperis_api_url', '"https://api.clone.erisvn.net"')
+  (UUID(), 'naperis_api_url', '"https://api.clone.erisvn.net"'),
+  -- Captcha Settings
+  (UUID(), 'captcha_enabled', 'false'),
+  (UUID(), 'captcha_provider', '"turnstile"'),
+  (UUID(), 'captcha_site_key', '""'),
+  (UUID(), 'captcha_secret_key', '""'),
+  (UUID(), 'captcha_mode', '"always"'),
+  -- Security Settings
+  (UUID(), 'login_rate_limit_enabled', 'false'),
+  (UUID(), 'require_email_verification', 'true'),
+  (UUID(), 'session_timeout_minutes', '1440')
 ON DUPLICATE KEY UPDATE `key` = `key`;
 
 -- =============================================
@@ -1743,6 +1753,132 @@ INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variable
   <p>Trân trọng,<br>{{site_name}}</p>
 </div>',
 '["customer_name", "timestamp", "deletion_date", "site_name"]',
+TRUE);
+
+-- Order Status Update
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'order_status_update',
+'🔄 Cập nhật trạng thái đơn hàng #{{order_id}}',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #2563eb;">Cập nhật đơn hàng</h2>
+  <p>Xin chào <strong>{{customer_name}}</strong>,</p>
+  <p>Đơn hàng <strong>#{{order_id}}</strong> của bạn đã được cập nhật:</p>
+  <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <p><strong>Trạng thái mới:</strong> {{status}}</p>
+    <p><strong>Thời gian:</strong> {{timestamp}}</p>
+  </div>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{order_url}}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Xem chi tiết</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["customer_name", "order_id", "status", "timestamp", "order_url", "site_name"]',
+TRUE);
+
+-- Order Account Delivered
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'order_account_delivered',
+'📬 Tài khoản đã được giao - Đơn hàng #{{order_id}}',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #16a34a;">Tài khoản của bạn đã sẵn sàng!</h2>
+  <p>Xin chào <strong>{{customer_name}}</strong>,</p>
+  <p>Đơn hàng <strong>#{{order_id}}</strong> đã được xử lý. Dưới đây là thông tin tài khoản:</p>
+  <div style="background: #dcfce7; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #86efac;">
+    <p><strong>Sản phẩm:</strong> {{product_name}}</p>
+    <pre style="background: #fff; padding: 12px; border-radius: 4px; overflow-x: auto;">{{account_info}}</pre>
+  </div>
+  <p style="color: #dc2626;"><strong>Lưu ý:</strong> Vui lòng đổi mật khẩu ngay sau khi nhận tài khoản.</p>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{order_url}}" style="background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Xem đơn hàng</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["customer_name", "order_id", "product_name", "account_info", "order_url", "site_name"]',
+TRUE);
+
+-- Wishlist Sale
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'wishlist_sale',
+'🔥 Sản phẩm yêu thích đang giảm giá!',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #dc2626;">Flash Sale!</h2>
+  <p>Xin chào <strong>{{customer_name}}</strong>,</p>
+  <p>Tin vui! Sản phẩm trong danh sách yêu thích của bạn đang có khuyến mãi:</p>
+  <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 16px 0; border: 1px solid #fecaca;">
+    <p><strong>{{product_name}}</strong></p>
+    <p style="text-decoration: line-through; color: #6b7280;">{{original_price}}</p>
+    <p style="font-size: 24px; color: #dc2626; font-weight: bold;">{{sale_price}}</p>
+    <p>Giảm {{discount_percent}}%</p>
+  </div>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{product_url}}" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Mua ngay</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["customer_name", "product_name", "original_price", "sale_price", "discount_percent", "product_url", "site_name"]',
+TRUE);
+
+-- Stock Back
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'stock_back',
+'📦 Sản phẩm đã có hàng trở lại!',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #16a34a;">Đã có hàng!</h2>
+  <p>Xin chào <strong>{{customer_name}}</strong>,</p>
+  <p>Sản phẩm bạn quan tâm đã có hàng trở lại:</p>
+  <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <p><strong>{{product_name}}</strong></p>
+    <p><strong>Giá:</strong> {{price}}</p>
+    <p><strong>Số lượng:</strong> {{stock_quantity}} sản phẩm</p>
+  </div>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{product_url}}" style="background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Xem sản phẩm</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["customer_name", "product_name", "price", "stock_quantity", "product_url", "site_name"]',
+TRUE);
+
+-- New Message
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'new_message',
+'💬 Bạn có tin nhắn mới từ {{sender_name}}',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #2563eb;">Tin nhắn mới</h2>
+  <p>Xin chào <strong>{{recipient_name}}</strong>,</p>
+  <p>Bạn vừa nhận được tin nhắn mới:</p>
+  <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 16px 0;">
+    <p><strong>Từ:</strong> {{sender_name}}</p>
+    <p><strong>Nội dung:</strong></p>
+    <p style="background: white; padding: 12px; border-radius: 4px;">{{message_preview}}</p>
+  </div>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{message_url}}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Xem tin nhắn</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["recipient_name", "sender_name", "message_preview", "message_url", "site_name"]',
+TRUE);
+
+-- Chat Message
+INSERT IGNORE INTO `email_templates` (`id`, `name`, `subject`, `body`, `variables`, `is_active`) VALUES
+(UUID(), 'chat_message',
+'💬 Tin nhắn hỗ trợ từ {{sender_name}}',
+'<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <h2 style="color: #8b5cf6;">Tin nhắn hỗ trợ</h2>
+  <p>Xin chào <strong>{{recipient_name}}</strong>,</p>
+  <p>Bạn có tin nhắn mới trong cuộc trò chuyện hỗ trợ:</p>
+  <div style="background: #f5f3ff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #8b5cf6;">
+    <p><strong>{{sender_name}}</strong> viết:</p>
+    <p style="background: white; padding: 12px; border-radius: 4px;">{{message_content}}</p>
+    <p style="font-size: 12px; color: #6b7280;">{{timestamp}}</p>
+  </div>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{chat_url}}" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Trả lời ngay</a>
+  </div>
+  <p>Trân trọng,<br>{{site_name}}</p>
+</div>',
+'["recipient_name", "sender_name", "message_content", "timestamp", "chat_url", "site_name"]',
 TRUE);
 
 -- =============================================

@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Settings, Building2, Percent, Mail, AlertTriangle, Sparkles, Key, Shield, DollarSign, BadgeCheck } from 'lucide-react';
+import { Settings, Building2, Percent, Mail, AlertTriangle, Sparkles, Key, Shield, DollarSign, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { SiteAssetUploader } from '@/components/admin/SiteAssetUploader';
 import ImageUrlInput from '@/components/admin/ImageUrlInput';
 
@@ -46,7 +46,7 @@ const AdminSettings = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs defaultValue="company" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 h-auto">
             <TabsTrigger value="company" className="gap-1 text-xs sm:text-sm py-2">
               <Building2 className="h-4 w-4 hidden sm:block" />
               Công ty
@@ -58,6 +58,10 @@ const AdminSettings = () => {
             <TabsTrigger value="oauth" className="gap-1 text-xs sm:text-sm py-2">
               <Key className="h-4 w-4 hidden sm:block" />
               OAuth
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-1 text-xs sm:text-sm py-2">
+              <ShieldCheck className="h-4 w-4 hidden sm:block" />
+              Bảo mật
             </TabsTrigger>
             <TabsTrigger value="referral" className="gap-1 text-xs sm:text-sm py-2">
               <Percent className="h-4 w-4 hidden sm:block" />
@@ -389,6 +393,161 @@ const AdminSettings = () => {
                 <strong>Lưu ý:</strong> Sau khi cấu hình, vào Lovable Cloud → Users → Auth Settings để kích hoạt provider.
               </p>
             </div>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-4 mt-4">
+            {/* Captcha Configuration */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Captcha (Cloudflare Turnstile)
+                </CardTitle>
+                <CardDescription>Bảo vệ form đăng nhập/đăng ký khỏi bot và spam</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Enable/Disable Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                  <div className="space-y-1">
+                    <Label className="text-base font-medium">Bật Captcha</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Yêu cầu người dùng xác minh captcha khi đăng nhập/đăng ký
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.captcha_enabled ?? false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, captcha_enabled: checked })}
+                  />
+                </div>
+
+                {/* Captcha Provider */}
+                <div className="space-y-2">
+                  <Label>Nhà cung cấp Captcha</Label>
+                  <Select
+                    value={formData.captcha_provider || 'turnstile'}
+                    onValueChange={(value) => setFormData({ ...formData, captcha_provider: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn nhà cung cấp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="turnstile">Cloudflare Turnstile (Khuyến nghị)</SelectItem>
+                      <SelectItem value="recaptcha">Google reCAPTCHA v2</SelectItem>
+                      <SelectItem value="hcaptcha">hCaptcha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Site Key */}
+                <div className="space-y-2">
+                  <Label>Site Key</Label>
+                  <Input
+                    value={formData.captcha_site_key || ''}
+                    onChange={(e) => setFormData({ ...formData, captcha_site_key: e.target.value })}
+                    placeholder="0x4AAAAAACHeVNTAamAr7dFd"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Site key hiển thị công khai trên form đăng nhập
+                  </p>
+                </div>
+
+                {/* Secret Key */}
+                <div className="space-y-2">
+                  <Label>Secret Key</Label>
+                  <Input
+                    type="password"
+                    value={formData.captcha_secret_key || ''}
+                    onChange={(e) => setFormData({ ...formData, captcha_secret_key: e.target.value })}
+                    placeholder="0x4AAAAAACHeVNT..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Secret key dùng để xác minh captcha phía server (giữ bí mật)
+                  </p>
+                </div>
+
+                {/* Instructions */}
+                <div className="p-4 bg-muted/50 rounded-lg text-sm space-y-2">
+                  <p className="font-medium text-foreground">Hướng dẫn cấu hình Cloudflare Turnstile:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Truy cập <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank" className="text-primary hover:underline">Cloudflare Dashboard → Turnstile</a></li>
+                    <li>Tạo widget mới với domain của bạn</li>
+                    <li>Sao chép Site Key và Secret Key vào form trên</li>
+                    <li>Chọn Widget Type: <code className="bg-background px-1 rounded">Managed</code> (khuyến nghị)</li>
+                  </ol>
+                </div>
+
+                {/* Captcha Mode */}
+                <div className="space-y-2">
+                  <Label>Chế độ Captcha</Label>
+                  <Select
+                    value={formData.captcha_mode || 'always'}
+                    onValueChange={(value) => setFormData({ ...formData, captcha_mode: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn chế độ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="always">Luôn hiển thị</SelectItem>
+                      <SelectItem value="suspicious">Chỉ khi nghi ngờ</SelectItem>
+                      <SelectItem value="login_only">Chỉ trang đăng nhập</SelectItem>
+                      <SelectItem value="signup_only">Chỉ trang đăng ký</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Chọn khi nào hiển thị captcha cho người dùng
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Security Options */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base md:text-lg">Tùy chọn bảo mật khác</CardTitle>
+                <CardDescription>Các cài đặt bảo mật bổ sung</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Rate Limiting */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">Giới hạn số lần đăng nhập sai</p>
+                    <p className="text-xs text-muted-foreground">Khóa tài khoản sau 5 lần đăng nhập thất bại</p>
+                  </div>
+                  <Switch
+                    checked={formData.login_rate_limit_enabled ?? false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, login_rate_limit_enabled: checked })}
+                  />
+                </div>
+
+                {/* Require Email Verification */}
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm">Yêu cầu xác minh email</p>
+                    <p className="text-xs text-muted-foreground">Người dùng phải xác minh email trước khi đăng nhập</p>
+                  </div>
+                  <Switch
+                    checked={formData.require_email_verification ?? true}
+                    onCheckedChange={(checked) => setFormData({ ...formData, require_email_verification: checked })}
+                  />
+                </div>
+
+                {/* Session Timeout */}
+                <div className="space-y-2">
+                  <Label>Thời gian hết hạn phiên đăng nhập (phút)</Label>
+                  <Input
+                    type="number"
+                    min="5"
+                    max="10080"
+                    value={formData.session_timeout_minutes || 1440}
+                    onChange={(e) => setFormData({ ...formData, session_timeout_minutes: parseInt(e.target.value) || 1440 })}
+                    placeholder="1440"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Mặc định: 1440 phút (24 giờ). Tối đa: 10080 phút (7 ngày)
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="referral" className="space-y-4 mt-4">

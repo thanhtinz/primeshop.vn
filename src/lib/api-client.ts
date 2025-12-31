@@ -542,6 +542,32 @@ const getSocket = (): Socket => {
   return socket;
 };
 
+// Socket manager for realtime features
+export const socketManager = {
+  connect() {
+    return getSocket();
+  },
+  disconnect() {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+  },
+  getSocket,
+  emit(event: string, data?: any) {
+    const sock = getSocket();
+    sock.emit(event, data);
+  },
+  on(event: string, callback: (...args: any[]) => void) {
+    const sock = getSocket();
+    sock.on(event, callback);
+  },
+  off(event: string, callback?: (...args: any[]) => void) {
+    const sock = getSocket();
+    sock.off(event, callback);
+  },
+};
+
 export const realtime = {
   channel(name: string) {
     const sock = getSocket();

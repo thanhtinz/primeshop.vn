@@ -1,7 +1,7 @@
 import express from 'express';
-import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
-import prisma from '../lib/prisma.js';
-import { discordService } from '../services/discordService.js';
+import { authMiddleware, adminMiddleware } from '../../middleware/auth.js';
+import prisma from '../../lib/prisma.js';
+import { discordService } from '../../services/discordService.js';
 
 const router = express.Router();
 

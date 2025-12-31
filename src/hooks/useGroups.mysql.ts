@@ -569,3 +569,24 @@ export function useRemoveMember() {
     },
   });
 }
+
+// Search groups
+export function useSearchGroups(query: string) {
+  return useQuery({
+    queryKey: ['groups', 'search', query],
+    queryFn: async () => {
+      if (!query || query.length < 2) return [];
+      
+      const { data, error } = await db
+        .from<any>('groups')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+        .eq('visibility', 'public')
+        .limit(20);
+      
+      if (error) throw error;
+      return (data || []).map(mapGroupToLegacy);
+    },
+    enabled: query.length >= 2,
+  });
+}

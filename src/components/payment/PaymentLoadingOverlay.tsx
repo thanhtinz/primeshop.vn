@@ -8,7 +8,7 @@ const PayPalIcon = () => (
 
 interface PaymentLoadingOverlayProps {
   isProcessing: boolean;
-  paymentMethod?: 'balance' | 'payos' | 'paypal';
+  paymentMethod?: 'balance' | 'payos' | 'paypal' | 'crypto';
 }
 
 export const PaymentLoadingOverlay = ({ isProcessing, paymentMethod = 'payos' }: PaymentLoadingOverlayProps) => {
@@ -31,6 +31,8 @@ export const PaymentLoadingOverlay = ({ isProcessing, paymentMethod = 'payos' }:
         return 'Đang trừ số dư tài khoản...';
       case 'paypal':
         return 'Đang kết nối PayPal...';
+      case 'crypto':
+        return 'Đang kết nối Crypto...';
       default:
         return 'Đang kết nối cổng thanh toán...';
     }

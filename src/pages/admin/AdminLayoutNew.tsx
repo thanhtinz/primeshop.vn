@@ -194,23 +194,8 @@ const getNavConfig = (t: (key: string) => string): { standalone: NavItem[], grou
       items: [
         { icon: Users, labelKey: 'admin.shopManagement', label: t('admin.shopManagement') || 'Quản lý cửa hàng', path: '/admin/marketplace' },
         { icon: Zap, labelKey: 'admin.boostPricing', label: t('admin.boostPricing') || 'Giá ghim sản phẩm', path: '/admin/boost-pricing' },
-        { icon: AlertTriangle, labelKey: 'admin.designAbuse', label: t('admin.designAbuse') || 'Báo cáo vi phạm', path: '/admin/design-abuse' },
-      ],
-    },
-    {
-      icon: Palette,
-      labelKey: 'admin.designServices',
-      label: t('admin.designServices') || 'Design Services',
-      pathPrefix: '/admin/design-',
-      items: [
-        { icon: FolderOpen, labelKey: 'admin.designCategories', label: t('admin.designCategories') || 'Danh mục Design', path: '/admin/design-categories' },
-        { icon: Package, labelKey: 'admin.designServices', label: t('admin.designServices') || 'Dịch vụ Design', path: '/admin/design-services' },
         { icon: ShoppingCart, labelKey: 'admin.designOrders', label: t('admin.designOrders') || 'Đơn hàng Design', path: '/admin/design-orders' },
-        { icon: Users, labelKey: 'admin.designManagers', label: t('admin.designManagers') || 'Quản lý Designer', path: '/admin/design-managers' },
-        { icon: FileText, labelKey: 'admin.designLicenses', label: t('admin.designLicenses') || 'Licenses', path: '/admin/design-licenses' },
-        { icon: DollarSign, labelKey: 'admin.designFees', label: t('admin.designFees') || 'Phí dịch vụ', path: '/admin/design-fees' },
-        { icon: BarChart3, labelKey: 'admin.designStats', label: t('admin.designStats') || 'Thống kê', path: '/admin/design-stats' },
-        { icon: Shield, labelKey: 'admin.designAudit', label: t('admin.designAudit') || 'Audit Log', path: '/admin/design-audit' },
+        { icon: AlertTriangle, labelKey: 'admin.designAbuse', label: t('admin.designAbuse') || 'Báo cáo vi phạm', path: '/admin/design-abuse' },
       ],
     },
     {

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { usePayments, useUpdatePayment, useUpdateOrder } from '@/hooks/useOrders';
-import { useSiteSettings, useUpdateMultipleSiteSettings } from '@/hooks/useSiteSettings';
 import { processAutoDelivery } from '@/hooks/useAutoDelivery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,8 +72,6 @@ const formatPrice = (price: number, currency: string = 'VND') => {
 
 const AdminPayments = () => {
   const { data: payments, isLoading: paymentsLoading, refetch } = usePayments();
-  const { data: settings, isLoading: settingsLoading } = useSiteSettings();
-  const updateSettings = useUpdateMultipleSiteSettings();
   const updatePayment = useUpdatePayment();
   const updateOrder = useUpdateOrder();
   const { formatDate, formatDateTime } = useDateFormat();
@@ -88,73 +85,6 @@ const AdminPayments = () => {
   // Date filters
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
-  
-  const [payosConfig, setPayosConfig] = useState({
-    payos_client_id: '',
-    payos_api_key: '',
-    payos_checksum_key: '',
-  });
-  
-  const [paypalConfig, setPaypalConfig] = useState({
-    paypal_enabled: false,
-    paypal_mode: 'sandbox',
-    paypal_client_id: '',
-    paypal_client_secret: '',
-  });
-
-  const [fpaymentConfig, setFpaymentConfig] = useState({
-    fpayment_enabled: false,
-    fpayment_api_key: '',
-    fpayment_merchant_id: '',
-  });
-
-  useEffect(() => {
-    if (settings) {
-      setPayosConfig({
-        payos_client_id: settings.payos_client_id || '',
-        payos_api_key: settings.payos_api_key || '',
-        payos_checksum_key: settings.payos_checksum_key || '',
-      });
-      setPaypalConfig({
-        paypal_enabled: settings.paypal_enabled || false,
-        paypal_mode: settings.paypal_mode || 'sandbox',
-        paypal_client_id: settings.paypal_client_id || '',
-        paypal_client_secret: settings.paypal_client_secret || '',
-      });
-      setFpaymentConfig({
-        fpayment_enabled: settings.fpayment_enabled || false,
-        fpayment_api_key: settings.fpayment_api_key || '',
-        fpayment_merchant_id: settings.fpayment_merchant_id || '',
-      });
-    }
-  }, [settings]);
-
-  const handleSavePayosConfig = async () => {
-    try {
-      await updateSettings.mutateAsync(payosConfig);
-      toast.success('Đã lưu cấu hình PayOS');
-    } catch (error) {
-      toast.error('Lỗi khi lưu cấu hình');
-    }
-  };
-
-  const handleSavePaypalConfig = async () => {
-    try {
-      await updateSettings.mutateAsync(paypalConfig);
-      toast.success('Đã lưu cấu hình PayPal');
-    } catch (error) {
-      toast.error('Lỗi khi lưu cấu hình');
-    }
-  };
-
-  const handleSaveFpaymentConfig = async () => {
-    try {
-      await updateSettings.mutateAsync(fpaymentConfig);
-      toast.success('Đã lưu cấu hình FPayment USDT');
-    } catch (error) {
-      toast.error('Lỗi khi lưu cấu hình');
-    }
-  };
 
   const handleUpdateStatus = async (paymentId: string, newStatus: string, payment?: any) => {
     try {
@@ -927,151 +857,40 @@ const AdminPayments = () => {
           </Card>
         </TabsContent>
 
-        {/* Configuration Tab */}
+        {/* Configuration Tab - Redirect to Secrets */}
         <TabsContent value="config" className="space-y-4">
-          {/* PayOS Config */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Cấu hình PayOS (VND)
+                <Settings className="h-5 w-5" />
+                Cấu hình cổng thanh toán
               </CardTitle>
               <CardDescription>
-                Cấu hình kết nối với PayOS cho thanh toán VND. Lấy thông tin từ{' '}
-                <a href="https://payos.vn" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  PayOS Dashboard
-                </a>
+                Quản lý API Keys và thông tin cấu hình thanh toán
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="payos_client_id">Client ID</Label>
-                  <Input
-                    id="payos_client_id"
-                    value={payosConfig.payos_client_id}
-                    onChange={(e) => setPayosConfig({ ...payosConfig, payos_client_id: e.target.value })}
-                    placeholder="Nhập Client ID"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="payos_api_key">API Key</Label>
-                  <Input
-                    id="payos_api_key"
-                    type="password"
-                    value={payosConfig.payos_api_key}
-                    onChange={(e) => setPayosConfig({ ...payosConfig, payos_api_key: e.target.value })}
-                    placeholder="Nhập API Key"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="payos_checksum_key">Checksum Key</Label>
-                <Input
-                  id="payos_checksum_key"
-                  type="password"
-                  value={payosConfig.payos_checksum_key}
-                  onChange={(e) => setPayosConfig({ ...payosConfig, payos_checksum_key: e.target.value })}
-                  placeholder="Nhập Checksum Key"
-                />
-              </div>
-              <div className="p-3 bg-muted rounded-lg text-sm">
-                <p className="font-medium mb-1">Webhook URL:</p>
-                <code className="text-xs break-all">
-                  {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/deposit-webhook`}
-                </code>
-              </div>
-              <Button 
-                onClick={handleSavePayosConfig} 
-                disabled={updateSettings.isPending}
-                className="w-full sm:w-auto"
-              >
-                {updateSettings.isPending ? 'Đang lưu...' : 'Lưu cấu hình PayOS'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* PayPal Config */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Cấu hình PayPal (USD)
-              </CardTitle>
-              <CardDescription>
-                Cấu hình kết nối với PayPal cho thanh toán USD. Lấy thông tin từ{' '}
-                <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  PayPal Developer Dashboard
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Cấu hình PayOS, PayPal và USDT đã được chuyển sang trang <strong>API Keys & Secrets</strong> để quản lý tập trung và bảo mật hơn.
+                </p>
+                <a 
+                  href="/admin/secrets" 
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  Đi đến API Keys & Secrets
                 </a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="paypal_enabled"
-                  checked={paypalConfig.paypal_enabled}
-                  onChange={(e) => setPaypalConfig({ ...paypalConfig, paypal_enabled: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="paypal_enabled">Bật thanh toán PayPal</Label>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="paypal_mode">Môi trường</Label>
-                <Select 
-                  value={paypalConfig.paypal_mode} 
-                  onValueChange={(value) => setPaypalConfig({ ...paypalConfig, paypal_mode: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sandbox">Sandbox (Test)</SelectItem>
-                    <SelectItem value="live">Live (Production)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Các cấu hình có sẵn:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>PayOS:</strong> Client ID, API Key, Checksum Key</li>
+                  <li><strong>PayPal:</strong> Client ID, Client Secret, Mode (sandbox/live)</li>
+                  <li><strong>USDT:</strong> FPayment API Key, Merchant ID</li>
+                </ul>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="paypal_client_id">Client ID</Label>
-                  <Input
-                    id="paypal_client_id"
-                    value={paypalConfig.paypal_client_id}
-                    onChange={(e) => setPaypalConfig({ ...paypalConfig, paypal_client_id: e.target.value })}
-                    placeholder="Nhập PayPal Client ID"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="paypal_client_secret">Client Secret</Label>
-                  <Input
-                    id="paypal_client_secret"
-                    type="password"
-                    value={paypalConfig.paypal_client_secret}
-                    onChange={(e) => setPaypalConfig({ ...paypalConfig, paypal_client_secret: e.target.value })}
-                    placeholder="Nhập PayPal Client Secret"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 bg-muted rounded-lg text-sm space-y-2">
-                <p className="font-medium">Webhook URL (cấu hình trong PayPal):</p>
-                <code className="text-xs break-all block">
-                  {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-webhook`}
-                </code>
-                <p className="text-muted-foreground text-xs">
-                  Webhook Events cần bật: PAYMENT.CAPTURE.COMPLETED, CHECKOUT.ORDER.APPROVED, PAYMENT.CAPTURE.REFUNDED, PAYMENT.CAPTURE.DENIED
-                </p>
-              </div>
-
-              <Button 
-                onClick={handleSavePaypalConfig} 
-                disabled={updateSettings.isPending}
-                className="w-full sm:w-auto"
-              >
-                {updateSettings.isPending ? 'Đang lưu...' : 'Lưu cấu hình PayPal'}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
