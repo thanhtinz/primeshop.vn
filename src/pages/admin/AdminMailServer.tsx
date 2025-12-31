@@ -607,6 +607,20 @@ const AdminMailServer = () => {
                             />
                           </div>
                           <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <Label>Dùng cho gửi email tự động</Label>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Email OTP, đơn hàng, thông báo sẽ gửi từ noreply@{selectedDomain.domain}
+                              </p>
+                            </div>
+                            <Switch
+                              checked={selectedDomain.use_for_sending || false}
+                              onCheckedChange={(checked) => {
+                                updateDomain.mutate({ id: selectedDomain.id, use_for_sending: checked });
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
                             <Label>Trạng thái hoạt động</Label>
                             <Switch
                               checked={selectedDomain.is_active}

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Eye, Search, Palette, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { Link } from 'react-router-dom';
 import { useDateFormat } from '@/hooks/useDateFormat';
@@ -62,7 +63,7 @@ export default function AdminDesignOrders() {
   const resolveMutation = useMutation({
     mutationFn: async ({ orderId, action }: { orderId: string; action: 'seller' | 'buyer' }) => {
       // Use RPC function to properly handle money transfer
-      const { data, error } = await supabase.rpc('resolve_design_dispute', {
+      const { data, error } = await rpc('resolve_design_dispute', {
         p_order_id: orderId,
         p_action: action,
         p_resolution_notes: resolution || null

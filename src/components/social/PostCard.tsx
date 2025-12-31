@@ -14,7 +14,7 @@ import { useDateFormat } from '@/hooks/useDateFormat';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import PostComments from './PostComments';
-import GroupPostComments from '@/components/groups/GroupPostComments';
+// import GroupPostComments from '@/components/groups/GroupPostComments';
 import SharePostDialog from './SharePostDialog';
 import { VipBadge } from '@/components/ui/vip-badge';
 import { PrimeBadge } from '@/components/ui/prime-badge';
@@ -24,10 +24,15 @@ import { ReactionsModal } from './ReactionsModal';
 import { ReportPostDialog } from './ReportPostDialog';
 import { HideUserDialog } from './HideUserDialog';
 import { EditPostDialog } from './EditPostDialog';
-import { EditGroupPostDialog } from '@/components/groups/EditGroupPostDialog';
+// import { EditGroupPostDialog } from '@/components/groups/EditGroupPostDialog';
 import { PostOptionsSheet } from './PostOptionsSheet';
 import { useHidePost, PostType } from '@/hooks/usePostModeration';
-import { useDeleteGroupPost, useReactToGroupPost, useGroupPostReactions } from '@/hooks/useGroupPosts';
+// import { useDeleteGroupPost, useReactToGroupPost, useGroupPostReactions } from '@/hooks/useGroupPosts';
+
+// Stub functions for removed group features
+const useDeleteGroupPost = () => ({ mutate: () => {} });
+const useReactToGroupPost = () => ({ mutate: () => {} });
+const useGroupPostReactions = () => ({ data: null, isLoading: false });
 
 interface ExtendedPost extends UserPost {
   is_shop_post?: boolean;

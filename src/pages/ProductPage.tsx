@@ -26,6 +26,7 @@ import { useConfetti } from '@/hooks/useConfetti';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { useProduct, DbProductPackage } from '@/hooks/useProducts';
 import { useAvailableAccountCount } from '@/hooks/useGameAccountInventory';
 import { useWishlist, useAddToWishlist, useRemoveFromWishlist, useToggleWishlistNotification } from '@/hooks/useWishlist';
@@ -579,7 +580,7 @@ const ProductPage = () => {
       // If paying with balance, deduct from account
       if (effectivePaymentMethod === 'balance' && user && profile) {
         // Use atomic RPC for balance payment
-        const { data: rpcResult, error: rpcError } = await supabase.rpc('pay_with_balance', {
+        const { data: rpcResult, error: rpcError } = await rpc('pay_with_balance', {
           p_user_id: user.id,
           p_amount: finalAmount,
           p_reference_type: 'order',

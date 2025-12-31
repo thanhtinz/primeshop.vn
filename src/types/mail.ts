@@ -10,6 +10,7 @@ export interface MailDomain {
   is_active: boolean;
   is_default: boolean;
   is_public: boolean;
+  use_for_sending?: boolean;
   max_mailboxes: number;
   max_storage_mb: number;
   max_message_size_mb: number;

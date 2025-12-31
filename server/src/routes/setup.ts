@@ -69,6 +69,14 @@ const runSeedData = async () => {
     { key: 'login_rate_limit_enabled', value: 'false' },
     { key: 'require_email_verification', value: 'true' },
     { key: 'session_timeout_minutes', value: '1440' },
+    // SMTP Settings
+    { key: 'secret_smtp_host', value: '""' },
+    { key: 'secret_smtp_port', value: '"587"' },
+    { key: 'secret_smtp_secure', value: 'false' },
+    { key: 'secret_smtp_user', value: '""' },
+    { key: 'secret_smtp_pass', value: '""' },
+    { key: 'secret_smtp_from_name', value: '"Prime Shop"' },
+    { key: 'secret_smtp_from_email', value: '""' },
   ];
   for (const setting of defaultSettings) {
     await prisma.siteSetting.upsert({

@@ -45,7 +45,15 @@ INSERT INTO `site_settings` (`id`, `key`, `value`) VALUES
   -- Security Settings
   (UUID(), 'login_rate_limit_enabled', 'false'),
   (UUID(), 'require_email_verification', 'true'),
-  (UUID(), 'session_timeout_minutes', '1440')
+  (UUID(), 'session_timeout_minutes', '1440'),
+  -- SMTP Email Settings
+  (UUID(), 'secret_smtp_host', '""'),
+  (UUID(), 'secret_smtp_port', '"587"'),
+  (UUID(), 'secret_smtp_secure', 'false'),
+  (UUID(), 'secret_smtp_user', '""'),
+  (UUID(), 'secret_smtp_pass', '""'),
+  (UUID(), 'secret_smtp_from_name', '"Prime Shop"'),
+  (UUID(), 'secret_smtp_from_email', '""')
 ON DUPLICATE KEY UPDATE `key` = `key`;
 
 -- =============================================

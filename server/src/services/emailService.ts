@@ -266,7 +266,7 @@ const getUserIdByEmail = async (email: string): Promise<string | undefined> => {
 // Get email config from database or environment
 const getEmailConfig = async (): Promise<EmailConfig> => {
   // Try to get from database settings
-  const settings = await prisma.siteSettings.findMany({
+  const settings = await prisma.siteSetting.findMany({
     where: {
       key: {
         in: [
@@ -287,6 +287,22 @@ const getEmailConfig = async (): Promise<EmailConfig> => {
     return acc;
   }, {} as Record<string, string>);
 
+  // Check if there's a mail domain marked for sending
+  const sendingDomain = await prisma.$queryRaw<Array<{ domain: string; display_name: string }>>`
+    SELECT domain, display_name FROM mail_domains 
+    WHERE use_for_sending = true AND is_active = true 
+    LIMIT 1
+  `.catch(() => []);
+
+  // Use sending domain if available, otherwise use settings
+  const fromEmail = sendingDomain.length > 0
+    ? `noreply@${sendingDomain[0].domain}`
+    : (settingsMap['secret_smtp_from_email'] || process.env.SMTP_FROM_EMAIL || 'noreply@primeshop.vn');
+
+  const fromName = sendingDomain.length > 0
+    ? (sendingDomain[0].display_name || 'Prime Shop')
+    : (settingsMap['secret_smtp_from_name'] || process.env.SMTP_FROM_NAME || 'Prime Shop');
+
   return {
     host: settingsMap['secret_smtp_host'] || process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(settingsMap['secret_smtp_port'] || process.env.SMTP_PORT || '587'),
@@ -296,8 +312,8 @@ const getEmailConfig = async (): Promise<EmailConfig> => {
       pass: settingsMap['secret_smtp_pass'] || process.env.SMTP_PASS || '',
     },
     from: {
-      name: settingsMap['secret_smtp_from_name'] || process.env.SMTP_FROM_NAME || 'Prime Shop',
-      email: settingsMap['secret_smtp_from_email'] || process.env.SMTP_FROM_EMAIL || 'noreply@primeshop.vn',
+      name: fromName,
+      email: fromEmail,
     },
   };
 };

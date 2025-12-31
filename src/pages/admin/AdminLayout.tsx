@@ -115,14 +115,14 @@ const navGroups: NavGroup[] = [
   {
     icon: Newspaper,
     label: 'Nội dung',
-    pathPrefix: '/admin/hero-banners|/admin/news|/admin/reviews|/admin/posts|/admin/stories|/admin/notes|/admin/partners|/admin/background-music',
+    pathPrefix: '/admin/hero-banners|/admin/news|/admin/reviews|/admin/posts|/admin/partners|/admin/background-music',
     items: [
       { icon: Image, label: 'Hero Banners', path: '/admin/hero-banners' },
       { icon: Newspaper, label: 'Tin tức', path: '/admin/news' },
       { icon: Star, label: 'Đánh giá', path: '/admin/reviews' },
       { icon: Newspaper, label: 'Bài viết (Newsfeed)', path: '/admin/posts' },
-      { icon: Image, label: 'Stories', path: '/admin/stories' },
-      { icon: MessageSquare, label: 'Ghi chú', path: '/admin/notes' },
+      // { icon: Image, label: 'Stories', path: '/admin/stories' },
+      // { icon: MessageSquare, label: 'Ghi chú', path: '/admin/notes' },
       { icon: Handshake, label: 'Đối tác', path: '/admin/partners' },
       { icon: Music, label: 'Nhạc nền', path: '/admin/background-music' },
     ],
@@ -140,10 +140,11 @@ const navGroups: NavGroup[] = [
   {
     icon: Megaphone,
     label: 'Thông báo & Email',
-    pathPrefix: '/admin/email|/admin/bulk-email|/admin/notifications',
+    pathPrefix: '/admin/email|/admin/bulk-email|/admin/notifications|/admin/mail-server',
     items: [
       { icon: Mail, label: 'Email', path: '/admin/email' },
       { icon: Send, label: 'Gửi email hàng loạt', path: '/admin/bulk-email' },
+      { icon: Mail, label: 'Mail Server', path: '/admin/mail-server' },
       { icon: Bell, label: 'Thông báo', path: '/admin/notifications' },
     ],
   },

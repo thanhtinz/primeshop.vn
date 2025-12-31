@@ -45,7 +45,7 @@ interface OAuthConfig {
 // Get OAuth config from environment or database
 export const getOAuthConfig = async (): Promise<OAuthConfig> => {
   // Try to get from database settings first
-  const settings = await prisma.siteSettings.findMany({
+  const settings = await prisma.siteSetting.findMany({
     where: {
       key: {
         in: [

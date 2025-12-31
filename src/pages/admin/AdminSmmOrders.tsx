@@ -15,6 +15,7 @@ import { useSmmOrders, useUpdateSmmOrder, useSmmApiCall, useSmmServices, SmmOrde
 import { useDateFormat } from '@/hooks/useDateFormat';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 
 const AdminSmmOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +116,7 @@ const AdminSmmOrders = () => {
           const refundAmountVND = convertToVND(refundAmountUSD);
           
           // Call atomic RPC to refund
-          const { data: rpcResult, error: rpcError } = await supabase.rpc('refund_smm_order', {
+          const { data: rpcResult, error: rpcError } = await rpc('refund_smm_order', {
             p_user_id: order.user_id,
             p_order_id: order.id,
             p_refund_amount_vnd: refundAmountVND,
@@ -194,7 +195,7 @@ const AdminSmmOrders = () => {
 
     try {
       // Call atomic RPC to refund balance to user
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('refund_smm_order', {
+      const { data: rpcResult, error: rpcError } = await rpc('refund_smm_order', {
         p_user_id: order.user_id,
         p_order_id: order.id,
         p_refund_amount_vnd: refundAmountVND,
@@ -284,7 +285,7 @@ const AdminSmmOrders = () => {
               const refundAmountUSD = order.charge * refundRatio;
               const refundAmountVND = convertToVND(refundAmountUSD);
               
-              const { data: rpcResult, error: rpcError } = await supabase.rpc('refund_smm_order', {
+              const { data: rpcResult, error: rpcError } = await rpc('refund_smm_order', {
                 p_user_id: order.user_id,
                 p_order_id: order.id,
                 p_refund_amount_vnd: refundAmountVND,

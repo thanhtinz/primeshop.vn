@@ -13,6 +13,7 @@ import { useAvatarFrames, useUserAvatarFrames, usePurchaseFrame, useSetActiveFra
 import { useHasPrimeBoost } from '@/hooks/usePrimeBoost';
 import { useWalletBalance } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
@@ -189,7 +190,7 @@ export const AvatarFrameShop = () => {
       const price = selectedFrame.price;
       
       // Use atomic RPC function for gift
-      const { data, error } = await supabase.rpc('purchase_shop_item', {
+      const { data, error } = await rpc('purchase_shop_item', {
         p_user_id: user.id,
         p_item_type: 'avatar_frame',
         p_item_id: selectedFrame.id,

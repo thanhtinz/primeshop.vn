@@ -125,28 +125,30 @@ const AuctionDetailPage = lazy(() => import("./pages/marketplace/AuctionDetailPa
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const NewsfeedPage = lazy(() => import("./pages/NewsfeedPage"));
 const FriendsPage = lazy(() => import("./pages/FriendsPage"));
-const GroupsPage = lazy(() => import("./pages/GroupsPage"));
-const GroupLayout = lazy(() => import("./components/groups/GroupLayout"));
-const GroupPostsPage = lazy(() => import("./pages/groups/GroupPostsPage"));
-const GroupTasksPage = lazy(() => import("./pages/groups/GroupTasksPage"));
-const GroupDealsPage = lazy(() => import("./pages/groups/GroupDealsPage"));
-const GroupWalletPage = lazy(() => import("./pages/groups/GroupWalletPage"));
-const GroupMembersPage = lazy(() => import("./pages/groups/GroupMembersPage"));
-const GroupProofsPage = lazy(() => import("./pages/groups/GroupProofsPage"));
-const GroupInsightsPage = lazy(() => import("./pages/groups/GroupInsightsPage"));
-const GroupSettingsPage = lazy(() => import("./pages/groups/GroupSettingsPage"));
-const GroupAdminPage = lazy(() => import("./pages/groups/GroupAdminPage"));
-const GroupPostDetailPage = lazy(() => import("./pages/groups/GroupPostDetailPage"));
+// Groups removed - uncomment if needed
+// const GroupsPage = lazy(() => import("./pages/GroupsPage"));
+// const GroupLayout = lazy(() => import("./components/groups/GroupLayout"));
+// const GroupPostsPage = lazy(() => import("./pages/groups/GroupPostsPage"));
+// const GroupTasksPage = lazy(() => import("./pages/groups/GroupTasksPage"));
+// const GroupDealsPage = lazy(() => import("./pages/groups/GroupDealsPage"));
+// const GroupWalletPage = lazy(() => import("./pages/groups/GroupWalletPage"));
+// const GroupMembersPage = lazy(() => import("./pages/groups/GroupMembersPage"));
+// const GroupProofsPage = lazy(() => import("./pages/groups/GroupProofsPage"));
+// const GroupInsightsPage = lazy(() => import("./pages/groups/GroupInsightsPage"));
+// const GroupSettingsPage = lazy(() => import("./pages/groups/GroupSettingsPage"));
+// const GroupAdminPage = lazy(() => import("./pages/groups/GroupAdminPage"));
+// const GroupPostDetailPage = lazy(() => import("./pages/groups/GroupPostDetailPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
-const UtilitiesPage = lazy(() => import("./pages/UtilitiesPage"));
-const DomainCheckerPage = lazy(() => import("./pages/utilities/DomainCheckerPage"));
-const VideoDownloaderPage = lazy(() => import("./pages/utilities/VideoDownloaderPage"));
-const MailCheckerPage = lazy(() => import("./pages/utilities/MailCheckerPage"));
-const MoneySplitPage = lazy(() => import("./pages/utilities/MoneySplitPage"));
-const ChecklistPage = lazy(() => import("./pages/utilities/ChecklistPage"));
-const FormatConverterPage = lazy(() => import("./pages/utilities/FormatConverterPage"));
-const MediaConverterPage = lazy(() => import("./pages/utilities/MediaConverterPage"));
-const QrGeneratorPage = lazy(() => import("./pages/utilities/QrGeneratorPage"));
+// const UtilitiesPage = lazy(() => import("./pages/UtilitiesPage"));
+// const DomainCheckerPage = lazy(() => import("./pages/utilities/DomainCheckerPage"));
+// const VideoDownloaderPage = lazy(() => import("./pages/utilities/VideoDownloaderPage"));
+// const MailCheckerPage = lazy(() => import("./pages/utilities/MailCheckerPage"));
+// const MoneySplitPage = lazy(() => import("./pages/utilities/MoneySplitPage"));
+// Checklist removed - uncomment if needed
+// const ChecklistPage = lazy(() => import("./pages/utilities/ChecklistPage"));
+// const FormatConverterPage = lazy(() => import("./pages/utilities/FormatConverterPage"));
+// const MediaConverterPage = lazy(() => import("./pages/utilities/MediaConverterPage"));
+// const QrGeneratorPage = lazy(() => import("./pages/utilities/QrGeneratorPage"));
 
 // Design services pages
 const DesignServicesPage = lazy(() => import("./pages/design/DesignServicesPage"));
@@ -192,8 +194,9 @@ const AdminBoostPricing = lazy(() => import("./pages/admin/AdminBoostPricing"));
 const AdminRewards = lazy(() => import("./pages/admin/AdminRewards"));
 const AdminPosts = lazy(() => import("./pages/admin/AdminPosts"));
 const AdminPostReports = lazy(() => import("./pages/admin/AdminPostReports"));
-const AdminStories = lazy(() => import("./pages/admin/AdminStories"));
-const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
+// Stories & Notes removed - uncomment if needed
+// const AdminStories = lazy(() => import("./pages/admin/AdminStories"));
+// const AdminNotes = lazy(() => import("./pages/admin/AdminNotes"));
 const AdminStickers = lazy(() => import("./pages/admin/AdminStickers"));
 const AdminPrimeBoost = lazy(() => import("./pages/admin/AdminPrimeBoost"));
 const AdminDesignCategories = lazy(() => import("./pages/admin/AdminDesignCategories"));
@@ -346,20 +349,24 @@ const AppRoutes = () => {
         <Route path="/newsfeed" element={<NewsfeedPage />} />
         <Route path="/post/:postId" element={<PostDetailPage />} />
         <Route path="/friends" element={<FriendsPage />} />
-        <Route path="/groups" element={<GroupsPage />} />
-        <Route path="/utilities" element={<Navigate to="/utilities/qr" replace />} />
+        {/* Groups removed - uncomment if needed */}
+        {/* <Route path="/groups" element={<GroupsPage />} /> */}
+        {/* Utilities removed */}
+        {/* <Route path="/utilities" element={<Navigate to="/utilities/qr" replace />} />
         <Route path="/utilities/domain" element={<DomainCheckerPage />} />
         <Route path="/utilities/download" element={<VideoDownloaderPage />} />
         <Route path="/utilities/mail" element={<MailCheckerPage />} />
         <Route path="/utilities/money-split" element={<MoneySplitPage />} />
-        <Route path="/utilities/checklist" element={<ChecklistPage />} />
         <Route path="/utilities/format" element={<FormatConverterPage />} />
         <Route path="/utilities/media" element={<MediaConverterPage />} />
-        <Route path="/utilities/qr" element={<QrGeneratorPage />} />
+        <Route path="/utilities/qr" element={<QrGeneratorPage />} /> */}
+        {/* Checklist removed - uncomment if needed */}
+        {/* <Route path="/utilities/checklist" element={<ChecklistPage />} /> */}
         
         
-        <Route path="/groups/:id/post/:postId" element={<GroupPostDetailPage />} />
-        <Route path="/groups/:id" element={<GroupLayout />}>
+        {/* Groups routes removed - uncomment if needed */}
+        {/* <Route path="/groups/:id/post/:postId" element={<GroupPostDetailPage />} /> */}
+        {/* <Route path="/groups/:id" element={<GroupLayout />}>
           <Route index element={<GroupPostsPage />} />
           <Route path="tasks" element={<GroupTasksPage />} />
           <Route path="deals" element={<GroupDealsPage />} />
@@ -369,7 +376,7 @@ const AppRoutes = () => {
           <Route path="insights" element={<GroupInsightsPage />} />
           <Route path="settings" element={<GroupSettingsPage />} />
           <Route path="admin" element={<GroupAdminPage />} />
-        </Route>
+        </Route> */}
         
         {/* Shop routes */}
         <Route path="/shops" element={<ShopsListPage />} />
@@ -486,8 +493,9 @@ const AppRoutes = () => {
           <Route path="rewards" element={<AdminRewards />} />
           <Route path="posts" element={<AdminPosts />} />
           <Route path="post-reports" element={<AdminPostReports />} />
-          <Route path="stories" element={<AdminStories />} />
-          <Route path="notes" element={<AdminNotes />} />
+          {/* Stories & Notes removed - uncomment if needed */}
+          {/* <Route path="stories" element={<AdminStories />} /> */}
+          {/* <Route path="notes" element={<AdminNotes />} /> */}
           <Route path="stickers" element={<AdminStickers />} />
           <Route path="prime-boost" element={<AdminPrimeBoost />} />
           <Route path="design-categories" element={<AdminDesignCategories />} />

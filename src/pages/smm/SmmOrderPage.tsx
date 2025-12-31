@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -169,7 +170,7 @@ const SmmOrderPage = () => {
       });
 
       // Use atomic RPC to deduct balance and create order
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('create_smm_order_atomic', {
+      const { data: rpcResult, error: rpcError } = await rpc('create_smm_order_atomic', {
         p_user_id: user.id,
         p_amount_vnd: totalVND,
         p_service_id: selectedService.id,

@@ -17,6 +17,7 @@ import { useConfetti } from '@/hooks/useConfetti';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { sendDiscordNotification } from '@/hooks/useDiscordNotify';
 import { processAutoDelivery } from '@/hooks/useAutoDelivery';
 import { CryptoPaymentModal } from '@/components/payment/CryptoPaymentModal';
@@ -232,7 +233,7 @@ const CheckoutPage = () => {
 
         if (paymentMethod === 'balance') {
           // Use atomic RPC for balance payment
-          const { data: result, error: rpcError } = await supabase.rpc('create_seller_order_with_escrow', {
+          const { data: result, error: rpcError } = await rpc('create_seller_order_with_escrow', {
             p_product_id: mpItem.productId,
             p_seller_id: mpItem.sellerId,
             p_amount: mpItem.price,
@@ -303,7 +304,7 @@ const CheckoutPage = () => {
         
         if (systemOnlyAmount > 0) {
           // Use atomic RPC for balance payment
-          const { data: rpcResult, error: rpcError } = await supabase.rpc('pay_with_balance', {
+          const { data: rpcResult, error: rpcError } = await rpc('pay_with_balance', {
             p_user_id: user.id,
             p_amount: Math.max(0, systemOnlyAmount),
             p_reference_type: 'order',
@@ -420,7 +421,7 @@ const CheckoutPage = () => {
 
       // Update system voucher usage atomically
       if (systemVoucher) {
-        await supabase.rpc('increment_voucher_usage' as any, { 
+        await rpc('increment_voucher_usage' as any, { 
           voucher_id: systemVoucher.id 
         });
       }

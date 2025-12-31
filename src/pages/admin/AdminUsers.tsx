@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { rpc } from '@/lib/api-client';
 import { 
   Users, Wallet, Crown, Search, RefreshCw, Edit, Plus, Trash2, Loader2, Ban, CheckCircle,
   Bell, ShoppingBag, MoreVertical, Eye, Download, FileSpreadsheet, Key, UserX, Globe,
@@ -151,7 +152,7 @@ const AdminUsers = () => {
     const adjustment = parseFloat(balanceAdjustment);
     if (isNaN(adjustment)) { toast.error('Số tiền không hợp lệ'); return; }
     try {
-      const { data, error } = await supabase.rpc('admin_adjust_user_balance', {
+      const { data, error } = await rpc('admin_adjust_user_balance', {
         p_admin_user_id: currentUser.id,
         p_target_profile_id: editingUser.id,
         p_adjustment: adjustment,

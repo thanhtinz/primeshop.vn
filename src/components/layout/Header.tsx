@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, User, Coins, LogIn, LogOut, ChevronDown, Gamepad2, Crown, Zap, Search, MessageSquare, Newspaper, Home, Gift, PartyPopper, Heart, Sun, Moon, Globe, Code, DollarSign, Loader2, Store, ShoppingBag, Users, MessagesSquare, Settings, Shield, Gavel, Wrench, ArrowLeftRight, Video, QrCode, Link2 as Link2Icon, Palette } from 'lucide-react';
+import { ShoppingCart, Menu, User, Coins, LogIn, LogOut, ChevronDown, Gamepad2, Crown, Zap, Search, MessageSquare, Newspaper, Home, Gift, PartyPopper, Heart, Sun, Moon, Globe, Code, DollarSign, Loader2, Store, ShoppingBag, Users, MessagesSquare, Settings, Shield, Gavel, Wrench, ArrowLeftRight, Video, QrCode, Link2 as Link2Icon, Palette, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -231,8 +231,8 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Utilities Dropdown */}
-          <DropdownMenu>
+          {/* Utilities Dropdown - removed */}
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={cn(
                 "flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium rounded-md transition-colors",
@@ -282,7 +282,7 @@ export function Header() {
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           {/* More Dropdown - only show when logged in */}
           {user && (
@@ -314,12 +314,7 @@ export function Header() {
                     Marketplace
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/groups" className="flex items-center gap-2 cursor-pointer text-[13px]">
-                    <Users className="h-3.5 w-3.5" />
-                    Groups
-                  </Link>
-                </DropdownMenuItem>
+                {/* Groups removed */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/support" className="flex items-center gap-2 cursor-pointer text-[13px]">
@@ -902,13 +897,7 @@ export function Header() {
                     <Store className="h-5 w-5" />
                     <span className="font-medium">Marketplace</span>
                   </Link>
-                  <Link to="/groups" onClick={() => setIsOpen(false)} className={cn(
-                    "flex items-center gap-3 px-4 py-3 transition-colors",
-                    isActiveLink('/groups') ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                  )}>
-                    <Users className="h-5 w-5" />
-                    <span className="font-medium">Groups</span>
-                  </Link>
+                  {/* Groups removed */}
                   <Link to="/support" onClick={() => setIsOpen(false)} className={cn(
                     "flex items-center gap-3 px-4 py-3 transition-colors",
                     isActiveLink('/support') ? "bg-primary/10 text-primary" : "hover:bg-muted"
@@ -930,8 +919,8 @@ export function Header() {
                     <Newspaper className="h-5 w-5" />
                     <span className="font-medium">News</span>
                   </Link>
-                  {/* Utilities Dropdown */}
-                  <Collapsible>
+                  {/* Utilities Dropdown - removed */}
+                  {/* <Collapsible>
                     <CollapsibleTrigger asChild>
                       <button className={cn(
                         "w-full flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors",
@@ -980,7 +969,7 @@ export function Header() {
                         </Link>
                       </div>
                     </CollapsibleContent>
-                  </Collapsible>
+                  </Collapsible> */}
 
 
                   {hasActiveAuctions && (

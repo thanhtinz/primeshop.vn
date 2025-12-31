@@ -587,40 +587,123 @@ const AdminSettings = () => {
           <TabsContent value="email" className="space-y-4 mt-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base md:text-lg">Cài đặt Email (Resend)</CardTitle>
-                <CardDescription>Hệ thống sử dụng Resend để gửi email tự động</CardDescription>
+                <CardTitle className="text-base md:text-lg">Cài đặt Email SMTP</CardTitle>
+                <CardDescription>Cấu hình máy chủ SMTP để gửi email tự động</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="font-medium text-green-800 dark:text-green-200">Resend đã được kích hoạt</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>SMTP Host</Label>
+                    <Input
+                      value={formData.secret_smtp_host || ''}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_host: e.target.value })}
+                      placeholder="smtp.gmail.com"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Gmail: smtp.gmail.com | Outlook: smtp.office365.com
+                    </p>
                   </div>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Hệ thống đang sử dụng Resend API để gửi tất cả email tự động bao gồm: xác nhận đơn hàng, thông báo thanh toán, OTP, hóa đơn, và các thông báo khác.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Địa chỉ email gửi</Label>
-                  <Input
-                    value={formData.smtp_from || ''}
-                    onChange={(e) => setFormData({ ...formData, smtp_from: e.target.value })}
-                    placeholder="noreply@yoursite.com hoặc onboarding@resend.dev"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Đây là địa chỉ email hiển thị khi gửi mail cho khách hàng. Mặc định: onboarding@resend.dev
-                  </p>
+                  <div className="space-y-2">
+                    <Label>SMTP Port</Label>
+                    <Input
+                      type="number"
+                      value={formData.secret_smtp_port || '587'}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_port: e.target.value })}
+                      placeholder="587"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      TLS: 587 | SSL: 465
+                    </p>
+                  </div>
                 </div>
 
-                <div className="p-4 bg-muted/50 rounded-lg text-sm">
-                  <p className="font-medium mb-2">Lưu ý về domain email:</p>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Để sử dụng domain riêng (vd: noreply@yoursite.com), bạn cần xác minh domain tại <a href="https://resend.com/domains" target="_blank" className="text-primary underline">Resend Domains</a></li>
-                    <li>Nếu chưa xác minh domain, hãy sử dụng: onboarding@resend.dev</li>
-                    <li>API Key đã được cấu hình trong hệ thống Cloud</li>
-                  </ul>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>SMTP Username</Label>
+                    <Input
+                      value={formData.secret_smtp_user || ''}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_user: e.target.value })}
+                      placeholder="your-email@gmail.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SMTP Password / App Password</Label>
+                    <Input
+                      type="password"
+                      value={formData.secret_smtp_pass || ''}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_pass: e.target.value })}
+                      placeholder="••••••••••••••••"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Gmail cần dùng App Password (16 ký tự)
+                    </p>
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tên hiển thị khi gửi</Label>
+                    <Input
+                      value={formData.secret_smtp_from_name || ''}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_from_name: e.target.value })}
+                      placeholder="Prime Shop"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email gửi đi</Label>
+                    <Input
+                      type="email"
+                      value={formData.secret_smtp_from_email || ''}
+                      onChange={(e) => setFormData({ ...formData, secret_smtp_from_email: e.target.value })}
+                      placeholder="noreply@yoursite.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="smtp_secure"
+                    checked={formData.secret_smtp_secure === 'true'}
+                    onCheckedChange={(checked) => setFormData({ ...formData, secret_smtp_secure: checked ? 'true' : 'false' })}
+                  />
+                  <Label htmlFor="smtp_secure">Sử dụng SSL/TLS (bật nếu dùng port 465)</Label>
+                </div>
+
+                <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">📧 Hướng dẫn cấu hình Gmail:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-amber-700 dark:text-amber-300">
+                    <li>Bật xác minh 2 bước tại <a href="https://myaccount.google.com/security" target="_blank" className="underline">Google Account</a></li>
+                    <li>Tạo App Password tại <a href="https://myaccount.google.com/apppasswords" target="_blank" className="underline">App Passwords</a></li>
+                    <li>Sử dụng App Password (16 ký tự, không có dấu cách) thay cho mật khẩu Gmail</li>
+                    <li>Host: smtp.gmail.com | Port: 587 | Secure: Tắt</li>
+                  </ol>
+                </div>
+
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/email/test', {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                        }
+                      });
+                      const result = await response.json();
+                      if (result.success) {
+                        toast.success('Kết nối SMTP thành công!');
+                      } else {
+                        toast.error('Lỗi kết nối: ' + result.error);
+                      }
+                    } catch (error) {
+                      toast.error('Không thể test kết nối SMTP');
+                    }
+                  }}
+                >
+                  🔌 Test kết nối SMTP
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
