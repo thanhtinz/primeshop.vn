@@ -223,7 +223,27 @@ const SellerDesignRewardsPage = lazy(() => import("./pages/marketplace/seller/Se
 const SellerDesignStatsPage = lazy(() => import("./pages/marketplace/seller/SellerDesignStatsPage"));
 
 
-const queryClient = new QueryClient();
+// Optimized React Query configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cache data for 5 minutes
+      staleTime: 5 * 60 * 1000,
+      // Keep unused data in cache for 10 minutes
+      gcTime: 10 * 60 * 1000,
+      // Retry failed requests 1 time
+      retry: 1,
+      // Don't refetch on window focus in production
+      refetchOnWindowFocus: false,
+      // Don't refetch on reconnect
+      refetchOnReconnect: false,
+    },
+    mutations: {
+      // Retry failed mutations once
+      retry: 1,
+    },
+  },
+});
 
 // Wrapper component to handle maintenance mode and setup check
 const AppRoutes = () => {

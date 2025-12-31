@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -57,6 +58,22 @@ app.set('io', io);
 
 // Security middleware
 app.use(helmet());
+
+// Compression middleware - compress all responses
+app.use(compression({
+  // Compress responses only if they are above 1KB
+  threshold: 1024,
+  // Compression level (0-9, higher = better compression but slower)
+  level: 6,
+  // Filter function to decide what to compress
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+}));
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
@@ -67,8 +84,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Static files (for local uploads)
-app.use('/uploads', express.static('uploads'));
+// Static files (for local uploads) with caching headers
+app.use('/uploads', express.static('uploads', {
+  maxAge: '1d', // Cache for 1 day
+  etag: true,
+  lastModified: true,
+}));
 
 // Health check (no rate limit)
 app.get('/health', (req, res) => {
